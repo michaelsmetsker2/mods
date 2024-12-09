@@ -4,22 +4,29 @@ Up-to-date as of Ballionaire `v0.103.0`
 
 # Overview
 
+## Golden Rule
+
+Documents can get stale, so please use `examples/mod.lua` as the source of truth if you find a contradiction between the docs and the examples :)
+
 ## Language / Runtime
 
-Ballionaire's mod uses Lua, powered by the [MoonSharp interpreter](https://www.moonsharp.org/). Please check out the MoonSharp FAQ for differences between MoonSharp's dialect of Lua and vanilla Lua.
+Ballionaire's mods use Lua, powered by the [MoonSharp interpreter](https://www.moonsharp.org/). Please check out the MoonSharp FAQ for differences between MoonSharp's dialect of Lua and vanilla Lua. For the most part, there shouldn't be any practical differences.
 
 ## Sandbox
 
 The Lua environment is heavily sandboxed. You'll have access to `print`, `string`, `math`, and `table` APIs, but not much else. Importantly, `require` and variations of `load` are not supported; your mod must reside entirely in a single `mod.lua` file.
 
+I'll be working to support interactions betwene mods and mult-file mods in the future, but want to keep things simple for v1.0.
+
 ## How to Structure Your Mod
 
 The game will scan and load mods once, at startup. If you need to make changes to your mod, you'll need to restart the game. If you want to unload mods, you'll need to restart the game.
 
-Mods should live in a directory, and may contain one `mod.lua` file that the game will read and load, as well as any image files used by the mode. Those images can be referred to via a relative path in the mod code.
+Each Mod should live in its own directory, and must contain both a `mod.ini` and `mod.lua` file. Any image files used by the mode can also live in that directory. Those images can be referred to via a relative path in the mod code.
 
 ```
 my_mod\              (this is the mod's id)
+  mod.ini
   mod.lua
   trigger.png
   other_trigger.png
@@ -30,6 +37,7 @@ Mods are first loaded from the Steam workshop, e.g. `C:\Program Files (x86)\Stea
 ```
 C:\Program Files (x86)\Steam\steamapps\workshop\content\2667120
   3355979752\          (this is the mod's id)
+    mod.ini
     mod.lua
     trigger.png
     other_trigger.png
@@ -39,137 +47,95 @@ Mods are also loaded from the `mods\` directory of the game's working directory 
 
 Mods are identified by the name of the directory they're in. If the mod loader detects two mods with same id, it will complain.
 
-Please see the [Framework](#framework) section on how defined a mod in `mod.lua`.
+## mod.ini
+
+The `mod.ini` file contains the basics of identifying your mod: the mod's name, the author's name, a description of the mod, an an icon representing the mod. All of this information will be display in-game in the Mods tab as well as in the Custom Run or Lab pages.
+
+The `version` field is especially important. If you make breaking changes to your mod, such as removing content, or changing what the save/load structure is for a piece of content, you need to bump your mod's version up by 1. When the game sees a mod's version change, it will automatically cancel any in-progress run that was using the earlier version of the mod. To keep this simple, we recommend simply increasing your versio by 1 every time you publish a change to your mod.
+
+```
+[mod]
+version = 1
+name = "Examples"
+author = "newobject"
+about = "Mod API Examples"
+texture = "computer.png"
+```
+
+## mod.lua
+
+See `examples/mod.lua` for an example of how to define the content of your mod. A basic mod will typically only have top-level calls to definition functions like `define_starter_pack`, `define_boon`, etc. `mod.lua` itself is executed when the application starts, not when a run starts, so you generally don't want any gameplay logic executing at the top level of the file, because there won't be any "game" at that time.
+
+## exports.txt
+
+Several global values are made available to your mod, to allow you to refer to built-in content from the core gaem. These are all listed in `exports.txt` - the symbols there are verbatim how to refer to things, e.g. to refer to a Butterfly you would use `triggers.butterfly`.
+
+The exports can and will change as the game receives updates. We'll try to make sure these changes are always backwards compatible, but we can't make any guarantees that such changes **won't** occur.
 
 # Framework
 
 The Ballionaire mod API is broken down into two sections: definition functions that run at game load time for defining your mod and content such as triggers, and game functions that run at game play time, for interacting with the gameplay and making things happen!
 top level of `mod.lua`
 
-### `define_mod`
-
-This function should be called _exactly once_, and at the top of your `mod.lua` before any other content-defining functions like `define_trigger` are called.
-
-`define_mod(options)`
-
-**Arguments**
+### `define_starter_pack`
 
 - `options` (`table`, required)
-  - `name` (`string`, required): the name of this mod
-  - `author` (`string`, required): the author of this mod
-  - `desc` (`string`, required): the description of this mod
-  - `texture` (`string`, required): path to the icon that represents this mod.
+  - `id` (`number`, required): a unique starter pack id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber starter packs; the save system is based around maintaining consistent starter pack ids across versions.
+  - `name` (`string`, required): the name of the starter pack
+  - `desc` (`string`, required): the description of this starter pack
+  - `texture` ([Texture](#texture), required): a texture for this starter pack's icons
+  - `drafts` (array of [Concept](#concept) objects, required): the contents of the starter pack
 
-**Returns**
+See the example mod for examples of how to specify contents using a mix and mathc of [TriggerDef](#triggerdef)s, [BoonDef](#boondef)s, and [Trait](#trait)s
 
-[Result](#result)
+Some notes on starter packs:
+
+- If any of the contents of the starter packs are locked for the player, the game will automatically show the starter pack as locked. You don't need to, and can't, control this.
+- The starter packs are defined here are non-Initiate Starter Packs.
+- Suggestion! You can use starter packs as a way to define special "challenges" or "game modes", e.g. where perhaps the board starts in an exact configuration: See the _""Oops!!! All Cheese!!!""_ starter pack in the example mod for some ideas.
+
+### `define_boon`
+
+- `options` (`table`, required)
+  - `id` (`number`, required): a unique boon id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber boons; the save system is based around maintaining consistent boon ids across versions.
+  - `name` (`string`, required): the name of the boon.
+  - `desc` (`string`, required): the description of the boon.
+  - `texture` ([Texture](#texture), required): a texture for this boon's icons.
+  - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
+  - `on_bonk` (`function`, optional): called when a ball bonks a trigger.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](Boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that did the bonking.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was bonked.
+  - `on_drop` (`function`, optional): called when the drop occurs. Note that this is only called _once_, even on a board like Slot Machine where multiple balls drop.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](Boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `balls` (array of [Ball](#ball) objects) - the balls that dropped.
+  - `on_earn` (`function`, optional): called when money is earned _anywhere_.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](Boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `earn` ([Earn](#earn)) - the earn object.
+      - `ball` ([Ball](#ball)) - the ball that earned money (may be `nil`).
+      - `boon` ([Boon](#boon)) - the boon that earned money (may be `nil`).
+      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
+  - `on_place` (`function`, optional): called when the boon is placed on the board _including_ when a save game is reloaded.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](Boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `continuing` (boolean) - true if the boon is being placed due to the player choosing to continue a saved game.
+
+⚠️ **NOTE** : Support here is preliminary, more to come! Many more `on_***` handlers coming soon! This is just a basic start.
 
 ### `define_trigger`
 
-Call this function at the top level of `mod.lua` to define a new trigger.
-
-`define_trigger(options)`
-
-**Arguments**
-
-- `options` (`table`, required)
-  - `id` (`number`, required): a unique number in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber triggers; the save system is based around maintaining consistent trigger ids across versions.
-  - `name` (`string`, required): the name of the trigger
-  - `desc` (`string`, required): the description of this trigger
-  - `rarity` (`string`, required): the rarity of the trigger, see [Rarity](#rarity) for valid values.
-  - `cooldown` (`string`, optional, default = `none`): the cooldown time of the trigger, see [Cooldown](#cooldown) for valid values.
-  - `texture` (`string`, required): path to the texture for the trigger.
-  - `traits` (array of [Trait](#trait) objects, optional): any traits this trigger should be given. You can reference custom traits, or built-in traits.
-  - `synergies` (mixed array of [Trait](#trait) or [Trigger](#trigger) objects, optional): Other things this trigger synergizes with. You can supply an array of traits and/or specific triggers. Synergies only serve to hint the player; there is no functionality based on this synergy list. (Note: from a _design_ perspective, it's better to design for trait-level synergy, but specific trigger synergies are necessary sometimes and supported!)
-  - `on_place` (`function`, optional): called when the trigger is placed on the board _including_ when a save game is reloaded.
-    - `on_place` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-        - `continuing` (boolean) - true if the trigger is being placed due to the player choosing to continue a saved game.
-  - `on_drop` (`function`, optional): called when the initial ball drop(s) occur. _NOT_ called when a ball is spawned after the drop. _IMPORTANT_: some boards may have drop multiple balls, thus this callback receives an array of balls, not just a single ball. it's called after ALL balls drops.
-    - `on_drop` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-        - `balls` (array of [Ball](Ball)) - the ball(s) that dropped. will be non-empty.
-  - `on_next_drop` (`function`, optional): called after scoring, while the player is waiting to initiate the next drop.
-    - `on_next_drop` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-  - `on_bonk` (`function`, optional): called when the trigger is bonked by a ball. Never called while the trigger is in cooldown.
-    - `on_bonk` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-        - `ball` ([Ball](Ball)) - the ball that is causing the bonk.
-  - `on_update` (`function`, optional): called every frame _only while the ball is dropping_. Use sparingly!
-    - `on_update` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-        - `ball` ([Ball](Ball)) - the ball that is causing the bonk.
-  - `on_earn_money` (`function`, optional): called when _any_ trigger has earned money.
-    - `on_earn_money` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-        - `source` ([Trigger](#trigger)) - the trigger which earned money (in the future, may include more than triggers - recommend checking that `source.class == "Trigger"` if you care that it's specifically a trigger)
-        - `ball` ([Ball](#ball)) - the ball that caused the earn, if any (may be nil, e.g. for passive scoring)
-        - `earn` ([Earn](#earn)) - the earnings object (can be manipulated!)
-  - `on_passive_earn` (`function`, optional): called after the drop, during the passive scoring phase of the game.
-    - `on_passive_earn` arguments:
-      - event (table)
-        - `api` ([API](#api)) - the game API
-        - `self` ([Trigger](Trigger)) - this trigger
-        - `data` (table) - freeform data table for this trigger
-
-**Returns**
-
-[TriggerDef](#triggerdef)
-
-### `define_trigger_draft`
-
-Call this function at the top level of `mod.lua` to define a new trigger draft function.
-
-`define_trigger_draft(options)`
-
-**Arguments**
-
-- `options` (`table`, required)
-  - `id` (`number`, required): a unique number in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber trigger drafts; the save system is based around maintaining consistent trigger ids across versions.
-  - `accept` (`function`, required): a function to accept or reject a trigger def from the trigger draft
-    - `accept` arguments:
-      - `def` ([TriggerDef](#triggerdef)) - the trigger def being considered for inclusion in the draft
-    - `accept` return: `bool` - true to allow the trigger into the draft, or false to reject the trigger from the draft
-
-**Returns**
-
-[TriggerDraft](#triggerdraft)
-
-### `define_trait`
-
-Call this function at the top level of `mod.lua` to define a new traits (the tags that many triggers have, such as "Spawner", etc)
-
-`define_trait(options)`
-
-**Arguments**
-
-- `options` (`table`, required)
-  - `name` (`string`, required) The visible name of the trait. Should be globally unique, to prevent confusion
-  - `definition` (`string`, optional, default: `nil`) A definitional tooltip explaining the trait.
-  - `definition_priority` (`number`, optional, default: `0`) If a definition is given, specify the priority of the definition. Popups only show 3 definitions, even if more are available, ordered by this priority.
-
-**Returns**
-
-[Trait](#trait)
+Coming soon :)
 
 # Data Types
 
@@ -177,27 +143,6 @@ Call this function at the top level of `mod.lua` to define a new traits (the tag
 
 Much of the game logic lives in the API object, which is made available in the `api` property of most content callbacks.
 
-- `add_drops(args)` - award extra drops to the player. **IMPORTANT**: this is obviously insanely powerful from a balance perspective. Use it wisely :)
-  - arguments:
-    - `args` (`table`, required)
-      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
-      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
-      - `amount` (`number`, required) - amount of extra drops to be given to the player.
-  - returns: boolean
-- `add_removals(args)` - award extra removals to the player.
-  - arguments:
-    - `args` (`table`, required)
-      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
-      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
-      - `amount` (`number`, required) - amount of extra removals to be given to the player.
-  - returns: boolean
-- `add_rerolls(args)` - award extra rerolls to the player.
-  - arguments:
-    - `args` (`table`, required)
-      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
-      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
-      - `amount` (`number`, required) - amount of extra rerolls to be given to the player.
-  - returns: boolean
 - `are_slots_adjacent(args)` - determine if two board slots are adjacent
   - arguments:
     - `args` (`table`, required)
@@ -210,10 +155,6 @@ Much of the game logic lives in the API object, which is made available in the `
       - `trigger` ([Trigger](#trigger), required)
       - `other` ([Trigger](#trigger), required)
   - returns: boolean
-- `ball_type(type)` - get a [BallType](#balltype) enum, given a string. [BallType](#balltype) is currently kinda different from other enums as it's represented as an object instead of a string. This is probably going to get cleaned up soon. Likely the [BallType](#balltype) object and this function will go away and the API will only use strings.
-  - arguments:
-    - `type` (`string`, required)
-  - returns: [BallType](#balltype)
 - `bounce_ball(args)` - causes a ball bounce (e.g. Mushroom effect). **TODO**: document some reference values for velocity
   - arguments:
     - `args` (`table`, required)
@@ -241,7 +182,7 @@ Much of the game logic lives in the API object, which is made available in the `
           - `carryable` ([TriggerDef](#triggerdef)) - carryable to accept or reject
         - returns: `boolean` - `true` to consume, `false` to not consume
   - returns: n/a
-- `cooldown(args)` - \*_IMPORTANT_ : a trigger with cooldown must explicitly call `cooldown` in order to enter the cooling-down state. It does NOT happen automaticall when bonked!
+- `cooldown(args)` - cooldown the given trigger. **_IMPORTANT_** : a trigger with cooldown must explicitly call `cooldown` in order to enter the cooling-down state. It does NOT happen automatically when bonked!
   - arguments:
     - `args` (`table`, required)
       - `trigger` ([Trigger](#trigger), required)
@@ -270,6 +211,27 @@ Much of the game logic lives in the API object, which is made available in the `
       - `base` (`number`, required)
       - `mult` (`number`, option, default = `1`)
   - returns: n/a
+- `gain_drops(args)` - award extra drops to the player. **IMPORTANT**: this is obviously insanely powerful from a balance perspective. Use it wisely :)
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
+      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
+      - `amount` (`number`, required) - amount of extra drops to be given to the player.
+  - returns: boolean
+- `gain_removals(args)` - award extra removals to the player.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
+      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
+      - `amount` (`number`, required) - amount of extra removals to be given to the player.
+  - returns: boolean
+- `gain_rerolls(args)` - award extra rerolls to the player.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger), required) - the trigger adding rerolls
+      - `ball` ([Ball](#ball), optional) - the ball if any which caused this
+      - `amount` (`number`, required) - amount of extra rerolls to be given to the player.
+  - returns: boolean
 - `hide_counter(args)` - hide the trigger's counter, if one is visible.
   - arguments:
     - `args` (`table`, required)
@@ -281,7 +243,7 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), required)
       - `def` ([TriggerDef](#triggerdef), required)
   - returns: `true` if `ball` is carrying at least one carryable of the given `def` [TriggerDef](#triggerdef)
-- `mixin(trigger, type, args)` - install the given [Mixin](#mixins) in this Trigger.
+- `mixin(trigger, type, args)` - install the given [Mixin](#mixins) in this Trigger. **WARNING**: this is very advanced and very under construction.
   - `trigger` ([Trigger](#trigger), required) - the trigger into which to install this mixin
   - `type` (`string`, required, [Mixin](#mixins) type string) - the type of mixin to install
   - `args` (`table`, optional) - arguments for the mixin, which depend on the mixin type:
@@ -402,45 +364,45 @@ Much of the game logic lives in the API object, which is made available in the `
 
 ## Enumerations
 
-### BallDestroyedReason
-
-- `consumed`
-- `exited_bottom`
-- `exited_top`
-- `exited_left`
-- `exited_right`
-- `expired`
-
 ### BallType
 
-- `arrow`
-- `balloon`
-- `butterfly`
-- `coin`
-- `egg`
-- `eggplant`
-- `eye`
-- `fire`
-- `firecracker`
-- `ghost`
-- `rock`
-- `water`
+See the `exports.txt` file for a list of all Ball types.
+
+### BallDestroyedEffect
+
+- `sucked` - ball spins and shrinks and disappears, e.g. when consumed by a holder
+- `splatted` - ball splats in blood, e.g. when hitting a Cactus
+- `none` - no effect
+
+### BallDestroyedReason
+
+- `exited_bottom`, `exited_top`, `exited_right`, `exited_left` - ball left the screen, and what side specifically
+- `consumed` - something ate the ball, like a holder
+- `expired` - ball was forced to leave the world, e.g. due to being stuck, etc
 
 ### Rarity
 
-- `hidden` - Won't be surfaced in Ballipedia, can't be used in the Lab. Will never be shown in a draft under any circumstances.
-- `common`
-- `uncommon`
-- `rare`
-- `innate` - _Will_ be surfaced in Ballipedia, may be used in the lab. Could be shown in a draft if the conditions of the draft allow for it.
+See the `exports.txt` file for a list of all Rarities.
 
-### Sounds
+### TriggerDestroyedReason
+
+- `destroyed` - the trigger was destroyed by some kind of in-game effect, like a Limited trigger being exhausted
+- `forced` - the trigger was forced to leave the game, without necessarily being destroyed, e.g. Clover turning Lucky Clover
+- `removed` - the trigger was manually removed by the player using the "Remove" button
+
+### TriggerSpawnEffect
+
+- `none` - trigger just appears
+- `sparkle` - stars appear around the trigger and a little chime plays
+- `smoke` - trigger appears with a puff of dust, similarly to how it appears when placed by the player.
+
+## Sounds
 
 **NOTE** : please regard the list as "unstable" and volatile, at least until v1.0 launches.
 
 `air_disperse`, `air_whoosh`, `bell`, `boing`, `bomb`, `bonk`, `boom`, `bowling`, `bow2`, `bow3`, `buckaw`, `chomp`, `chop`, `coin`, `creek_open`, `dice`, `ding`, `enhance`, `fireball`, `ghost`, `glissando_descend90s`, `horn_bus`, `laugh_high_pitched_imp00`, `notification`, `oldone`, `ouch_high_pitched_imp00`, `pinball_bumper`, `place_trigger`, `pop`, `popcorn`, `pop_longer`, `rubber_stretch_down_pitch`, `rubber_stretch_up_pitch`, `score_juice_high_pitch`, `score_juice_low_pitch`, `score_juice_medium_pitch`, `shatter`, `sizzle`, `sparkle`, `splash`, `splat`, `teleport`, `thunder`, `ui_blip00`, `ui_reject00`, `ui_shop_buy00`, `whoosh`, `wood_hinge_open`, `zap`
 
-### Cooldown
+### Cooldowns
 
 - `none` - No cooldown
 - `short` - 2 seconds
@@ -523,23 +485,43 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
   - `linear_velocity` ([Vector2](#vector2)) - the linear velocity of this Ball.
   - `type` ([BallType](#balls)) - the type of the Ball.
 
-### BallDestroyedEffect
+### BoonDef
 
-- `sucked` - ball spins and shrinks and disappears, e.g. when consumed by a holder
-- `splatted` - ball splats in blood, e.g. when hitting a Cactus
-- `none` - no effect
+- `BoonDef` (`userdata`)
+  - `class` (`string`) - `"boondef"`
+  - `name` (`string`)
+  - `texture` ([Texture](#texture))
 
-### BallDestroyedReason
+See the `exports.txt` file for a list of all built-in Boon definitions. So for example you can refer to the Correctional Fluid boon by `boons.correctional_fluid`
 
-- `exited_bottom`, `exited_top`, `exited_right`, `exited_left` - ball left the screen, and what side specifically
-- `consumed` - something ate the ball, like a holder
-- `expired` - ball was forced to leave the world, e.g. due to being stuck, etc
+### Concept
+
+A `Concept` is an umbrella of many things; every [TriggerDef](#triggerdef) or [BoonDef](#boondef) is a concept. Each [Trait](#trait) is a concept.
 
 ### Earn
 
 - `Earn` (`userdata`)
-  - `Base` (`number`) - the base amount earned
-  - `Mult` (`number`) - the current multiplier
+  - `Base` (`number`, read-only) - the earning base
+  - `Mult` (`number`, read-only) - the earning overall multiplier (see below)
+  - `Scalar` (`number`, read-only) - the total value earned `Base * Mult`
+  - `mult` (`function`, args: `number`) - add to the mult
+  - `xmult` (`function`, args: `number`) - multiply the xmult
+
+Earning is based on a mult/xmult model:
+
+`(1.0 + mult) * xmult`
+
+For example, given an Earn object `earn`, with Base: 800, Mult: 1.0
+
+If you then call
+
+`earn.mult(0.25)`
+
+`earn.xmult(2)`
+
+`earn.mult(0.25)`
+
+The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plugging into the overall Mult formula: `(1.0 + 0.5) * 2.0` - the total Mult is `3.0`.
 
 ### Slot
 
@@ -563,11 +545,7 @@ There's also a global object, named `traits`, that has all the built-in traits d
   - `texture` ([Texture](#texture))
   - `traits` (`table` where keys are [Trait](#trait) objects)
 
-There's a global object, named `triggers`, that has all teh built-in triggers defined on it,. The existing built-intriggers are:
-
-`abyssal_donut`, `anchor`, `armored_car`, `avalanche`, `axe`, `balloon`, `battery`, `bombgoblin`, `bow`, `bread`, `brick`, `broom`, `bullseye`, `bus`, `butterfly`, `cactus`, `cairn`, `campfire`, `candle`, `capacitor`, `caprese_salad`, `cash_register`, `caterpillar`, `cave`, `cave_troll`, `cheese`, `chefs_pan`, `cherry`, `chicken`, `chthonic_pylon`, `clear_weather`, `clover`, `coin_hoard`, `compass`, `credit_card`, `credit_card_bill`, `crystal_ball`, `dam`, `dart_trap`, `diamond`, `egg_carton`, `empty_spellbook`, `empyrean_egg`, `firecracker`, `gavel`, `glue`, `gold_mine`, `grape_vine`, `greenhouse`, `grilled_cheese`, `hammock`, `happy_drama_mask`, `hole_in_one`, `house_plant`, `hungry_mouth`, `ice_cubes`, `investment_bonk`, `juggler`, `jumprope`, `jungle_hat`, `kiln`, `lake`, `lich`, `lucky_clover`, `magic_castle`, `map`, `mine_cart`, `museum`, `mushroom`, `nest`, `old_one`, `packing_tape`, `pale_chalice`, `parachute`, `piggy_bonk`, `pinball_bumper`, `pizza`, `plate`, `practice_dummy`, `pumpkin`, `radiator`, `rainbow`, `recycling_bin`, `refrigerator`, `retirement_fund`, `rock_crusher`, `running_cap`, `sad_drama_mask`, `scroll_of_divination`, `scroll_of_enprisming`, `scroll_of_invigoration`, `scroll_of_rebirth`, `scroll_of_ripening`, `seedling`, `seven`, `shopping_cart`, `skillshot`, `smokescreen`, `spellbook_of_divination`, `spellbook_of_enprisming`, `spellbook_of_invigoration`, `spellbook_of_rebirth`, `spellbook_of_ripening`, `stopwatch`, `stormy_weather`, `sword`, `tanning_chair`, `teleporter`, `thief`, `tomato`, `tophat`, `torch`, `treasure_chest`, `tree`, `volcano`, `wallet`, `watermill`, `well`, `whale`, `whistle`, `windmill`, `wisening_wand`, and `wyvern`
-
-So for example you can refer to the pizza trigger by `triggers.pizza`
+See the `exports.txt` file for a list of all built-in Trigger definitions. So for example you can refer to the pizza trigger by `triggers.pizza`
 
 ### TriggerDraft
 
@@ -587,25 +565,18 @@ So for example you can refer to the pizza trigger by `triggers.pizza`
     - returns :
       - [Mixin](#mixins) or `nil` (if mixin is not installed in the Trigger)
 
-### TriggerDestroyedReason
-
-- `destroyed` - the trigger was destroyed by some kind of in-game effect, like a Limited trigger being exhausted
-- `forced` - the trigger was forced to leave the game, without necessarily being destroyed, e.g. Clover turning Lucky Clover
-- `removed` - the trigger was manually removed by the player using the "Remove" button
-
-### TriggerSpawnEffect
-
-- `none` - trigger just appears
-- `sparkle` - stars appear around the trigger and a little chime plays
-- `smoke` - trigger appears with a puff of dust, similarly to how it appears when placed by the player.
-
 ## Godot
 
 ### Texture
 
 - `Texture` (`userdata`)
 
-An opaque userdata represented a Godot Texture. You can't do anything with it, other than pass it around.
+**As output _from_ the API**: An opaque userdata represented a Godot Texture. You can't do anything with it, other than pass it around. Look in the example mod to see how we repurpose a boon or trigger texture as an icon for our starter pack, e.g. `boons.zoo.texture`
+
+**As input _to_ the API**: Either:
+
+- An opaque userdata, as above
+- _or_ if you supply a `string`, the game will attempt to load an imagee from disk at that path.
 
 ### Vector2
 
