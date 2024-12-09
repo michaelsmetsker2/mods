@@ -1,11 +1,11 @@
 "workshopitem"
 {
 	"appid"		"2667120"
-	"contentfolder"		"C:\\Users\\newob\\Documents\\ballionaire-4.2\\mods\\testing_123"
-	"previewfile"		"C:\\Users\\newob\\Documents\\ballionaire-4.2\\mods\\testing_123\\ballionaire.png"
+	"contentfolder"		"C:\\Users\\newob\\Documents\\ballionaire-mods\\example"
+	"previewfile"		"C:\\Users\\newob\\Documents\\ballionaire-mods\\example"
 	"visibility"		"0"
-	"title"		"Testing Testing 1 2 3"
-	"description"		"Testing First Ballionaire Mod"
+	"title"		"Examples"
+	"description"		"Mod API Examples"
 	"changenote"		"Initial release"
 	"publishedfileid"		"3355979752"
 }
