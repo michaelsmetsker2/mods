@@ -1,3 +1,18 @@
+-- all ball destroyed effects
+
+ball_destroyed_effects.none
+ball_destroyed_effects.splatted
+ball_destroyed_effects.sucked
+
+-- all ball destroyed reasons
+
+ball_destroyed_reasons.consumed
+ball_destroyed_reasons.expired
+ball_destroyed_reasons.exited_top_edge
+ball_destroyed_reasons.exited_bottom_edge
+ball_destroyed_reasons.exited_right_edge
+ball_destroyed_reasons.exited_left_edge
+
 -- all ball types
 
 balls.arrow
@@ -138,6 +153,12 @@ traits.i_spawns_steam
 traits.i_spawns_water
 traits.i_starting_trigger
 traits.i_wants_removal
+
+-- all trigger destroyed reasons
+
+trigger_destroyed_effects.removed
+trigger_destroyed_effects.destroyed
+trigger_destroyed_effects.forced
 
 -- all triggers
 

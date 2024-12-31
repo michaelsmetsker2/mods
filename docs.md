@@ -77,6 +77,135 @@ The exports can and will change as the game receives updates. We'll try to make 
 The Ballionaire mod API is broken down into two sections: definition functions that run at game load time for defining your mod and content such as triggers, and game functions that run at game play time, for interacting with the gameplay and making things happen!
 top level of `mod.lua`
 
+### `define_board`
+
+Coming soon :)
+
+### `define_boon`
+
+- `options` (`table`, required)
+  - `id` (`number`, required): a unique boon id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber boons; the save system is based around maintaining consistent boon ids across versions.
+  - `name` (`string`, required): the name of the boon.
+  - `desc` (`string`, required): the description of the boon.
+  - `texture` ([Texture](#texture), required): a texture for this boon's icons.
+  - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
+  - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+  - `on_after_tribute` (`function`, optional): called after the tribute has been satisfied. not called when the player loses, also not called at the end of the game.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+  - `on_attackable_defeated` (`function`, optional): called when an attackable trigger is defeated.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `trigger` ([Trigger](#trigger)) - the attackable trigger that was defeated.
+      - `ball` ([Ball](#ball)) - the ball that caused the defeat (may be `nil`).
+  - `on_ball_spawn` (`function`, optional): called when a ball spawns, either at the drop or during the drop.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that spawned.
+      - `trigger` ([Trigger](#trigger)) - the trigger that spawned the ball (may be `nil`)
+      - `initial_drop` (boolean) - whether the ball spawn as part of the initial drop or not.
+  - `on_ball_destroyed` (`function`, optional): called when a ball is destroyed.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that was destroyed.
+      - `reason` ([BallDestroyedReason](#balldestroyedreason)) - the reason for the ball's destruction.
+  - `on_ball_carried` (`function`, optional): called when a ball carries a carryable.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that spawned.
+      - `carryable` ([TriggerDef](#triggerdef)) - the carryable's TriggerDef. NOT a specific Trigger instance.
+  - `on_ball_hat_worn` (`function`, optional): called when a ball wears a hat
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that spawned.
+      - `hat` ([TriggerDef](#triggerdef)) - the hat's TriggerDef. NOT a specific Trigger instance.
+  - `on_bonk` (`function`, optional): called when a ball bonks a trigger.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `ball` ([Ball](#ball)) - the ball that did the bonking.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was bonked.
+  - `on_charges_consumed` (`function`, optional): called when a limited trigger consumes a charge.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `trigger` ([Trigger](#trigger)) - the limit trigger that consumed the charge.
+      - `amount` (number) - the number of charges consumed.
+      - `ball` ([Ball](#ball)) - the ball that caused the consumption. (may be `nil`)
+  - `on_drop` (`function`, optional): called when the drop occurs. Note that this is only called _once_, even on a board like Slot Machine where multiple balls drop.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `balls` (array of [Ball](#ball) objects) - the balls that dropped.
+  - `on_earn` (`function`, optional): called when money is earned _anywhere_.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `earn` ([Earn](#earn)) - the earn object.
+      - `ball` ([Ball](#ball)) - the ball that earned money (may be `nil`).
+      - `boon` ([Boon](#boon)) - the boon that earned money (may be `nil`).
+      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
+  - `on_place` (`function`, optional): called when the boon is placed on the board _including_ when a save game is reloaded. BE VERY CAREFUL TO PAY ATTENTION TO THE `continuing` flag!!!
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `continuing` (boolean) - true if the boon is being placed due to the player choosing to continue a saved game.
+  - `on_reroll` (`function`, optional): called when any draft (Trigger or Boon) is rerolled.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+  - `on_trigger_destroyed` (`function`, optional): called when a trigger destroyed, including being removed by the player. Check the reason to discern one case fromt he other.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was destroyed.
+      - `ball` ([Ball](#ball)) - the ball that destroyed the trigger (may be `nil`).
+      - `reason` ([TriggerDestroyedReason](#triggerdestroyedreason)) - the reason for the trigger's destruction.
+  - `on_trigger_placed` (`function`, optional): called when a trigger is placed on the board _including_ when a save game is reloaded. BE VERY CAREFUL TO PAY ATTENTION TO THE `continuing` flag!!!
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was placed.
+      - `continuing` (boolean) - true if the boon is being placed due to the player choosing to continue a saved game.
+  - `on_trigger_draft_skipped` (`function`, optional): called when a trigger draft is skipped.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+  - `would_offer_trigger_draft_size` (`function`, optional, return type: `number`): when a trigger draft is being prepared, called with the proposed number of choices to offer. you should return the actual number of cards to be offered.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Boon](#boon)) - this boon.
+      - `data` (table) - freeform data table for this boon.
+      - `draft` ([TriggerDraft](#triggerdraft)) - the particular kind of draft occurring.
+      - `amount` (number) - the proposed number of choices to offer.
+
+⚠️ **NOTE** : Support here is preliminary, more to come! Many more `on_***` handlers coming soon! This is just a basic start.
+
 ### `define_starter_pack`
 
 - `options` (`table`, required)
@@ -94,46 +223,15 @@ Some notes on starter packs:
 - The starter packs are defined here are non-Initiate Starter Packs.
 - Suggestion! You can use starter packs as a way to define special "challenges" or "game modes", e.g. where perhaps the board starts in an exact configuration: See the _""Oops!!! All Cheese!!!""_ starter pack in the example mod for some ideas.
 
-### `define_boon`
+### `define_tribulation`
 
-- `options` (`table`, required)
-  - `id` (`number`, required): a unique boon id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber boons; the save system is based around maintaining consistent boon ids across versions.
-  - `name` (`string`, required): the name of the boon.
-  - `desc` (`string`, required): the description of the boon.
-  - `texture` ([Texture](#texture), required): a texture for this boon's icons.
-  - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
-  - `on_bonk` (`function`, optional): called when a ball bonks a trigger.
-    - arguments table:
-      - `api` ([API](#api)) - the game API.
-      - `self` ([Boon](Boon)) - this boon.
-      - `data` (table) - freeform data table for this boon.
-      - `ball` ([Ball](#ball)) - the ball that did the bonking.
-      - `trigger` ([Trigger](#trigger)) - the trigger that was bonked.
-  - `on_drop` (`function`, optional): called when the drop occurs. Note that this is only called _once_, even on a board like Slot Machine where multiple balls drop.
-    - arguments table:
-      - `api` ([API](#api)) - the game API.
-      - `self` ([Boon](Boon)) - this boon.
-      - `data` (table) - freeform data table for this boon.
-      - `balls` (array of [Ball](#ball) objects) - the balls that dropped.
-  - `on_earn` (`function`, optional): called when money is earned _anywhere_.
-    - arguments table:
-      - `api` ([API](#api)) - the game API.
-      - `self` ([Boon](Boon)) - this boon.
-      - `data` (table) - freeform data table for this boon.
-      - `earn` ([Earn](#earn)) - the earn object.
-      - `ball` ([Ball](#ball)) - the ball that earned money (may be `nil`).
-      - `boon` ([Boon](#boon)) - the boon that earned money (may be `nil`).
-      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
-  - `on_place` (`function`, optional): called when the boon is placed on the board _including_ when a save game is reloaded.
-    - arguments table:
-      - `api` ([API](#api)) - the game API.
-      - `self` ([Boon](Boon)) - this boon.
-      - `data` (table) - freeform data table for this boon.
-      - `continuing` (boolean) - true if the boon is being placed due to the player choosing to continue a saved game.
-
-⚠️ **NOTE** : Support here is preliminary, more to come! Many more `on_***` handlers coming soon! This is just a basic start.
+Coming soon :)
 
 ### `define_trigger`
+
+Coming soon :)
+
+### `define_trigger_draft`
 
 Coming soon :)
 
@@ -142,6 +240,15 @@ Coming soon :)
 ## API
 
 Much of the game logic lives in the API object, which is made available in the `api` property of most content callbacks.
+
+### Read-Only Properties
+
+- `current_tribute` - (number) the current tribute number, 1-based
+- `money` - (number) current amount of money earned this tribute.
+- `money_goal` - (number) current money goal (tribute amount).
+- `remaining_drops` - (number) how many drops are left before the tribute must be satisfied
+
+### Functions
 
 - `are_slots_adjacent(args)` - determine if two board slots are adjacent
   - arguments:
@@ -193,8 +300,7 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `ball` ([Ball](#ball), required) - the ball to be destroyed
       - `trigger` ([Trigger](#trigger), optional) - the trigger that caused this, if any
-      - `reason` ([BallDestroyedReason](#balldestroyedreason) string, optional) - reason the ball was destroyed
-      - `destroyed_effect` ([BallDestroyedEffect](#balldestroyedeffect) string, optional) - effect to play for ball destruction
+      - `effect` ([BallDestroyedEffect](#balldestroyedeffect) string, optional) - effect to play for ball destruction. defaults to none.
   - returns: n/a
 - `destroy_trigger(args)`
   - arguments:
@@ -206,7 +312,7 @@ Much of the game logic lives in the API object, which is made available in the `
 - `earn(args)` - cause money to be earned by a trigger, possibly attributed to a ball. **NOTE**: This API is likely to change because the game, internally, has a "declarative" scoring system, not ad-hoc assignment of scoring amounts like this API. I suggest you work in multiples of $100, and try to follow the games's existing power curve. Money earned will be displayed to the user as "base X mult" when mult > 1, or "base" when mult <= 1. Base and Mult should always be integral and will ultimately be integralized inside the game anyway if you don't make them integral. This API can also take negative bases to represent a loss.
   - arguments:
     - `args` (`table`, required)
-      - `source` ([Trigger](#trigger), required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required)
       - `ball` ([Ball](#ball), optional) - the ball if any which is causing the earning
       - `base` (`number`, required)
       - `mult` (`number`, option, default = `1`)
@@ -232,10 +338,10 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), optional) - the ball if any which caused this
       - `amount` (`number`, required) - amount of extra rerolls to be given to the player.
   - returns: boolean
-- `hide_counter(args)` - hide the trigger's counter, if one is visible.
+- `hide_counter(args)` - hide the trigger or boon's counter, if one is visible.
   - arguments:
     - `args` (`table`, required)
-      - `trigger` ([Trigger](#trigger), required) - trigger whose counter to hide.
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - trigger or boon whose counter should be hidden.
   - returns: n/a
 - `is_carrying(args)` - determine if a balls carrying a particular carryable.
   - arguments:
@@ -284,12 +390,17 @@ Much of the game logic lives in the API object, which is made available in the `
     - value
       - WIP
   - returns: n/a
+- `notify(args)` - Presenet a notification in the bottom right hand corner of the game screen. Use sparingly!
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), options) - trigger or boon providing the notification. Its texture will appear, if provided.
+      - `text` (`string`, required) - the text to display in the notification
+  - returns: n/a
 - `place_trigger(args)`
   - arguments:
     - `args` (`table`, required)
       - `def` ([TriggerDef](#triggerdef), required)
       - `slot` ([Slot](#slot), required)
-      - `with_fx` (`boolean`, optional, default = `true`)
   - returns: n/a
 - `play_sound(args)`
   - arguments:
@@ -314,15 +425,20 @@ Much of the game logic lives in the API object, which is made available in the `
 - `set_counter(args)` - Set a visible counter's value to the given string **IMPORTANT**: will NOT make the counter appear if it's currently hidden.
   - arguments:
     - `args` (`table`, required)
-      - `trigger` ([Trigger](#trigger), required) - trigger whose counter should be set.
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - trigger or boon whose counter should be set.
       - `value` (`string`, required) - initial value to display in the counter
   - returns: n/a
-- `show_counter(args)` - **IMPORTANT**: triggers can only display one counter.
+- `set_money_goal(args)` - Change the current money goal (tribute). Changing this value will _not_ immediately trigger any logic that cares about the tribute, e.g. Winner's Cup. They won't see the new money goal until the next time they would normally look at it.
   - arguments:
     - `args` (`table`, required)
-      - `trigger` ([Trigger](#trigger), required) - trigger which will show the counter.
+      - `amount` (`number`, required) - new money goal. ensure this is a positive number.
+  - returns: n/a
+- `show_counter(args)` - Make a counter appear for the given trigger or boon. **IMPORTANT**: triggers and boons can only display one counter.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - trigger or boon which will show the counter.
       - `value` (`string`, required) - initial value to display in the counter
-      - `color` (`string`, required) - a color given as hexadecimal, e.g. `"#f87b4b"` (TODO: document the game's palette)
+      - `color` (`string`, optional, default: "`#f8ecd7`") - a color given as hex rgb.
   - returns: n/a
 - `spawn_ball(args)` - **NOTE** If you want to access the spawned ball, do so by placing code in the `on_spawn` callback. This function does **not** return the Ball - because a ball may not always spawn when this function is called!
   - arguments:
@@ -370,15 +486,11 @@ See the `exports.txt` file for a list of all Ball types.
 
 ### BallDestroyedEffect
 
-- `sucked` - ball spins and shrinks and disappears, e.g. when consumed by a holder
-- `splatted` - ball splats in blood, e.g. when hitting a Cactus
-- `none` - no effect
+See the `exports.txt` file for a list of all BallDestroyedEffects.
 
 ### BallDestroyedReason
 
-- `exited_bottom`, `exited_top`, `exited_right`, `exited_left` - ball left the screen, and what side specifically
-- `consumed` - something ate the ball, like a holder
-- `expired` - ball was forced to leave the world, e.g. due to being stuck, etc
+See the `exports.txt` file for a list of all BallDestroyedReasons.
 
 ### Rarity
 
@@ -386,9 +498,7 @@ See the `exports.txt` file for a list of all Rarities.
 
 ### TriggerDestroyedReason
 
-- `destroyed` - the trigger was destroyed by some kind of in-game effect, like a Limited trigger being exhausted
-- `forced` - the trigger was forced to leave the game, without necessarily being destroyed, e.g. Clover turning Lucky Clover
-- `removed` - the trigger was manually removed by the player using the "Remove" button
+See the `exports.txt` file for a list of all TriggerDestroyedReasons.
 
 ### TriggerSpawnEffect
 
@@ -471,12 +581,6 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
 
 ## Objects
 
-### Result
-
-- `ok, msg` (tuple)
-  - `ok` (`boolean`) - true if successful
-  - `msg` (`string`) - meaningful only if ok = false
-
 ### Ball
 
 - `Ball` (`userdata`)
@@ -484,6 +588,12 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
   - `position` ([Vector2](#vector2)) - the global position of this Ball.
   - `linear_velocity` ([Vector2](#vector2)) - the linear velocity of this Ball.
   - `type` ([BallType](#balls)) - the type of the Ball.
+
+### Boon
+
+- `Boon` (`userdata`)
+  - `class` (`string`) - `"boon"`
+  - `def` ([BoonDef](#boondef)) - the BoonDef for this Boon.
 
 ### BoonDef
 

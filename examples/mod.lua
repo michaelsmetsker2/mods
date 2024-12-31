@@ -80,16 +80,148 @@ local oops_all_cheese = define_boon {
     name = "Oops!!! All Cheese",
     desc = "The board starts filled with Cheese triggers. You start with 10 removals.",
     texture = triggers.cheese.texture,
-    -- we mark this boon as hidden because we don't ever want someone to be able to draft it.
-    rarity = rarities.hidden,
+    rarity = rarities.undraftable,
     on_place = function(e)
         -- this isn't really great because this will run before tribulations, so it could block out 
         -- roaming nihility, for example
-        for slot in e.api.all_slots() do
+        if not e.continuing then
+            for slot in e.api.all_slots() do
+                e.api.place_trigger { def = triggers.cheese, slot = slot }
+            end
             e.api.gain_removals { source = e.self, amount = 10 }
-            e.api.place_trigger { def = triggers.cheese, slot = slot, with_fx = false }
         end
     end
+}
+
+local event_monitor = define_boon {
+    id = 6,
+    name = "Event Monitor",
+    desc = "Displays the last event that occurred.",
+    texture = triggers.computer.texture,
+    rarity = rarities.undraftable,
+    on_place = function(e)
+        e.api.show_counter { source = e.self, value = "on_place" }
+    end,
+    on_drop = function(e)
+        e.api.set_counter { source = e.self, value = "on_drop" }
+    end,
+    on_after_tribute = function(e)
+        e.api.set_counter { source = e.self, value = "on_after_tribute" }
+    end,
+    on_ball_spawn = function(e)
+        e.api.set_counter { source = e.self, value = "on_ball_spawn ("..e.ball.type.name..")" }
+    end,
+    on_ball_carried = function(e)
+        e.api.set_counter { source = e.self, value = "on_ball_carried ("..e.carryable.name..")" }
+    end,
+    on_ball_hat_worn = function(e)
+        e.api.set_counter { source = e.self, value = "on_ball_hat_worn ("..e.hat.name..")" }
+    end,
+    on_ball_destroyed = function(e)
+        local reason = { 
+            [ball_destroyed_reasons.none] = "none",
+            [ball_destroyed_reasons.consumed] = "consumed",
+            [ball_destroyed_reasons.expired] = "expired",
+            [ball_destroyed_reasons.exited_top_edge] = "exited_top_edge",
+            [ball_destroyed_reasons.exited_bottom_edge] = "exited_bottom_edge",
+            [ball_destroyed_reasons.exited_right_edge] = "exited_right_edge",
+            [ball_destroyed_reasons.exited_left_edge] = "exited_left_edge",
+        }
+        reason = reason[e.reason]
+        e.api.set_counter { source = e.self, value = "on_ball_destroyed ("..reason..")" }
+    end,
+    on_bonk = function(e)
+        e.api.set_counter { source = e.self, value = "on_bonk ("..e.trigger.def.name..")" }
+    end,
+    on_earn = function(e)
+        e.api.set_counter { source = e.self, value = "on_earn" }
+    end,
+    on_reroll = function(e)
+        e.api.set_counter { source = e.self, value = "on_reroll" }
+    end,
+    on_trigger_placed = function(e)
+        e.api.set_counter { source = e.self, value = "on_trigger_placed ("..e.trigger.def.name..")" }
+    end,
+    on_trigger_destroyed = function(e)
+        local removed = e.reason == trigger_destroyed_effects.removed and "(removed)" or ""
+        e.api.set_counter { source = e.self, value = "on_trigger_destroyed "..removed.."("..e.trigger.def.name..")" }
+    end,
+    on_trigger_draft_skipped = function(e)
+        e.api.set_counter { source = e.self, value = "on_trigger_draft_skipped" }
+    end,
+    on_charges_consumed = function(e)
+        e.api.set_counter { source = e.self, value = "on_charges_consumed ("..e.trigger.def.name..": "..e.amount..")" }
+    end,
+}
+
+local spawn_counter = define_boon {
+    id = 7,
+    name = "Spawn Counter",
+    desc = "Displays the total number of ball spawns that occurred.",
+    texture = triggers.computer.texture,
+    rarity = rarities.undraftable,
+    -- use e.data to store state. it's NOT automatically saved/loaded!
+    on_save = function(e)
+        return tostring(e.data.count)
+    end,
+    on_load = function(e)
+        e.data.count = tonumber(e.load)
+        e.api.set_counter { source = e.self, value = tostring(e.data.count) }
+    end,
+    on_place = function(e)
+        e.data.count = 0
+        e.api.show_counter { source = e.self, value = tostring(e.data.count) }
+    end,
+    on_ball_spawn = function(e)
+        e.data.count = e.data.count + 1
+        e.api.set_counter { source = e.self, value = tostring(e.data.count) }
+    end,
+}
+
+local random_draft_size = define_boon {
+    id = 8,
+    name = "Random Draft Size",
+    desc = "The draft will randomly have between 1-5 choices.",
+    texture = triggers.computer.texture,
+    rarity = rarities.undraftable,
+    would_offer_trigger_draft_size = function(e)
+        return math.random(1,5)
+    end,
+}
+
+local poor_mans_endlesss = define_boon {
+    id = 9,
+    name = "Poor Man's Endless Mode",
+    desc = "If you survive Tribute 9, keep playing until you lose. Tribute 9 never really ends, so you won't get a boon draft or trigger \"After Tribute\" effects.",
+    texture = "endless.png",
+    rarity = rarities.undraftable,
+    on_place = function(e)
+        e.data.extra_tributes = 0
+        e.api.show_counter { source = e.self, value = "Tribute "..e.api.current_tribute }
+    end,
+    on_save = function(e)
+        return tostring(e.data.extra_tributes)
+    end,
+    on_load = function(e)
+        e.data.extra_tributes = tonumber(e.load)
+        e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
+    end,
+    on_after_drop = function(e)
+        if e.api.current_tribute == 9 and e.api.remaining_drops == 0 then
+            if e.api.money > e.api.money_goal then
+                if e.data.extra_tributes == 0 then
+                    e.api.notify { source = e.self, text = "You survived the last tribute, welceom to Poor Man's Endless Mode!" }
+                else
+                    e.api.notify { source = e.self, text = "You survived Tribute "..(e.api.current_tribute + e.data.extra_tributes).."!" }
+                end
+                e.api.earn { source = e.self, base = -e.api.money, mult }
+                e.api.gain_drops { source = e.self, amount = 7 }
+                e.api.set_money_goal { amount = e.api.money_goal * 2 }
+                e.data.extra_tributes = e.data.extra_tributes + 1
+            end
+        end
+        e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
+    end,
 }
 
 ------ starter pack examples
