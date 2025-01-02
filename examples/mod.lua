@@ -210,7 +210,7 @@ local poor_mans_endlesss = define_boon {
         if e.api.current_tribute == 9 and e.api.remaining_drops == 0 then
             if e.api.money > e.api.money_goal then
                 if e.data.extra_tributes == 0 then
-                    e.api.notify { source = e.self, text = "You survived the last tribute, welceom to Poor Man's Endless Mode!" }
+                    e.api.notify { source = e.self, text = "You survived the last tribute, welcome to Poor Man's Endless Mode!" }
                 else
                     e.api.notify { source = e.self, text = "You survived Tribute "..(e.api.current_tribute + e.data.extra_tributes).."!" }
                 end
