@@ -307,7 +307,7 @@ Coming soon :)
       - `data` (table) - freeform data table for this trigger.
       - `earn` ([Earn](#earn)) - the earn object.
       - `ball` ([Ball](#ball)) - the ball that earned money (may be `nil`).
-      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
+      - `boon` ([Boon](#boon)) - the boon that earned money (may be `nil`).
       - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
   - `on_passive` (`function`, optional): called after the drop, during scoring, when the trigger should perform its earning of any passive income.
     - arguments table:
