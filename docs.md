@@ -89,6 +89,7 @@ Coming soon :)
   - `desc` (`string`, required): the description of the boon.
   - `texture` ([Texture](#texture), required): a texture for this boon's icons.
   - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
+  - `synergies` (array of [Concept](#concept)s): all synergies for this trigger.
   - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
     - arguments table:
       - `api` ([API](#api)) - the game API.
@@ -204,7 +205,9 @@ Coming soon :)
       - `draft` ([TriggerDraft](#triggerdraft)) - the particular kind of draft occurring.
       - `amount` (number) - the proposed number of choices to offer.
 
-⚠️ **NOTE** : Support here is preliminary, more to come! Many more `on_***` handlers coming soon! This is just a basic start.
+**Returns**
+
+[BoonDef](#boondef)
 
 ### `define_starter_pack`
 
@@ -223,13 +226,136 @@ Some notes on starter packs:
 - The starter packs are defined here are non-Initiate Starter Packs.
 - Suggestion! You can use starter packs as a way to define special "challenges" or "game modes", e.g. where perhaps the board starts in an exact configuration: See the _""Oops!!! All Cheese!!!""_ starter pack in the example mod for some ideas.
 
+**Returns**
+
+StarterPackDef
+
+### `define_trait`
+
+Call this function at the top level of `mod.lua` to define a new traits (the tags that many triggers have, such as "Spawner", etc)
+
+`define_trait(options)`
+
+**Arguments**
+
+- `options` (`table`, required)
+  - `name` (`string`, required) The visible name of the trait. Should be globally unique, to prevent confusion
+  - `definition` (`string`, optional, default: `nil`) A definitional tooltip explaining the trait.
+  - `definition_priority` (`number`, optional, default: `0`) If a definition is given, specify the priority of the definition. Popups only show 3 definitions, even if more are available, ordered by this priority.
+
+**Returns**
+
+[Trait](#trait)
+
 ### `define_tribulation`
 
 Coming soon :)
 
 ### `define_trigger`
 
-Coming soon :)
+- `options` (`table`, required)
+  - `id` (`number`, required): a unique trigger id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber triggers; the save system is based around maintaining consistent trigger ids across versions.
+  - `name` (`string`, required): the name of the trigger.
+  - `desc` (`string`, required): the description of the trigger.
+  - `texture` ([Texture](#texture), required): a texture for this trigger's icons.
+  - `rarity` ([Rarity](#rarity), required): the rarity of this trigger.
+  - `cooldown` (number, optional): the bonk cooldown of this trigger - defaults to 0 (no cooldown)
+  - `synergies` (array of [Concept](#concept)s): all synergies for this trigger.
+  - `traits` (array of [Trait](#trait)s): all traits for this trigger.
+  - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+  - `on_after_tribute` (`function`, optional): called after the tribute has been satisfied. not called when the player loses, also not called at the end of the game.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this boon.
+  - `on_ball_spawn` (`function`, optional): called when a ball spawns, either at the drop or during the drop.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `ball` ([Ball](#ball)) - the ball that spawned.
+      - `trigger` ([Trigger](#trigger)) - the trigger that spawned the ball (may be `nil`)
+      - `initial_drop` (boolean) - whether the ball spawn as part of the initial drop or not.
+  - `on_bonk` (`function`, optional): called when a ball bonks a trigger.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `ball` ([Ball](#ball)) - the ball that did the bonking.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was bonked.
+  - `on_destroying` (`function`, optional): called just before this trigger is destroyed. Check the reason to determine if the destruction is due to game effects or player removal.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `ball` ([Ball](#ball)) - the ball that caused the trigger to be destroyed (may be `nil`).
+      - `reason` ([TriggerDestroyedReason](#triggerdestroyedreason)) - the reason for the trigger's destruction.
+  - `on_drop` (`function`, optional): called when the drop occurs. Note that this is only called _once_, even on a board like Slot Machine where multiple balls drop.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `balls` (array of [Ball](#ball) objects) - the balls that dropped.
+  - `on_earn` (`function`, optional): called when money is earned _anywhere_.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `earn` ([Earn](#earn)) - the earn object.
+      - `ball` ([Ball](#ball)) - the ball that earned money (may be `nil`).
+      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
+      - `trigger` ([Trigger](#trigger)) - the trigger that earned money (may be `nil`).
+  - `on_passive` (`function`, optional): called after the drop, during scoring, when the trigger should perform its earning of any passive income.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+  - `on_place` (`function`, optional): called when the trigger is placed on the board _including_ when a save game is reloaded. BE VERY CAREFUL TO PAY ATTENTION TO THE `continuing` flag!!!
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `continuing` (boolean) - true if the trigger is being placed due to the player choosing to continue a saved game.
+  - `on_reroll` (`function`, optional): called when any draft (Trigger or Boon) is rerolled.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+  - `on_trigger_destroyed` (`function`, optional): called when a trigger destroyed, including being removed by the player. Check the reason to discern one case fromt he other.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was destroyed.
+      - `ball` ([Ball](#ball)) - the ball that destroyed the trigger (may be `nil`).
+      - `reason` ([TriggerDestroyedReason](#triggerdestroyedreason)) - the reason for the trigger's destruction.
+  - `on_trigger_placed` (`function`, optional): called when a trigger is placed on the board _including_ when a save game is reloaded. BE VERY CAREFUL TO PAY ATTENTION TO THE `continuing` flag!!!
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `trigger` ([Trigger](#trigger)) - the trigger that was placed.
+      - `continuing` (boolean) - true if the trigger is being placed due to the player choosing to continue a saved game.
+  - `on_trigger_draft_skipped` (`function`, optional): called when a trigger draft is skipped.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+  - `would_offer_trigger_draft_size` (`function`, optional, return type: `number`): when a trigger draft is being prepared, called with the proposed number of choices to offer. you should return the actual number of cards to be offered.
+    - arguments table:
+      - `api` ([API](#api)) - the game API.
+      - `self` ([Trigger](#trigger)) - this trigger.
+      - `data` (table) - freeform data table for this trigger.
+      - `draft` ([TriggerDraft](#triggerdraft)) - the particular kind of draft occurring.
+      - `amount` (number) - the proposed number of choices to offer.
+
+**Returns**
+
+[TriggerDef](#triggerdef)
 
 ### `define_trigger_draft`
 

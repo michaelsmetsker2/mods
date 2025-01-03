@@ -1,3 +1,7 @@
+----- trait examples
+
+local monitor_trait = define_trait { name = "Monitor" }
+
 ------ boon examples
 
 define_boon {
@@ -99,6 +103,7 @@ local event_monitor = define_boon {
     desc = "Displays the last event that occurred.",
     texture = triggers.computer.texture,
     rarity = rarities.undraftable,
+    synergies = { monitor_trait },
     on_place = function(e)
         e.api.show_counter { source = e.self, value = "on_place" }
     end,
@@ -221,6 +226,83 @@ local poor_mans_endlesss = define_boon {
             end
         end
         e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
+    end,
+}
+
+------ trigger examples
+
+define_trigger {
+    id = 1,
+    name = "Event Monitor",
+    desc = "Reports on events the trigger receives.",
+    texture = triggers.computer.texture,
+    rarity = rarities.undraftable,
+    synergies = { monitor_trait },
+    traits = { monitor_trait },
+    cooldown = 10,
+    on_place = function(e)
+        e.data.events = 0
+        e.api.show_counter { source = e.self, value = "on_place" }
+    end,
+    on_destroying = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_destroying" }
+    end,
+    on_after_drop = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_after_drop (total events = "..e.data.events..")" }
+    end,
+    on_after_tribute = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_after_tribute" }
+    end,
+    on_ball_spawn = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_ball_spawn" }
+    end,
+    on_bonk = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_bonk" }
+    end,
+    on_drop = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_drop" }
+    end,
+    on_earn = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_earn" }
+    end,
+    on_passive = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_passive" }
+    end,
+    on_reroll = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_reroll" }
+    end,
+    on_trigger_destroyed = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_trigger_destroyed" }
+    end,
+    on_trigger_placed = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_trigger_placed" }
+    end,
+    on_trigger_draft_skipped = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "on_trigger_draft_skipped" }
+    end,
+    would_offer_trigger_draft_size = function(e)
+        e.data.events = e.data.events + 1
+        e.api.set_counter { source = e.self, value = "would_offer_trigger_draft_size" }
+        return e.amount
+    end,
+    on_save = function(e)
+        return tostring(e.data.events)
+    end,
+    on_load = function(e)
+        e.data.events = tonumber(e.load)
+        e.api.set_counter { source = e.self, value = tostring(e.data.events) }
     end,
 }
 
