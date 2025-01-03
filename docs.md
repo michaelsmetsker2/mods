@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v0.103.0`
+Up-to-date as of Ballionaire `v1.0.10`
 
 # Overview
 
