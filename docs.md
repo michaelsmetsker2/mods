@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.10`
+Up-to-date as of Ballionaire `v1.0.11`
 
 # Overview
 
@@ -90,6 +90,7 @@ Coming soon :)
   - `texture` ([Texture](#texture), required): a texture for this boon's icons.
   - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
   - `synergies` (array of [Concept](#concept)s): all synergies for this trigger.
+  - `one_shot` (`boolean`, optional, default: `false`): if the boon has a one time effect and should not persist in the list of take boons. Additionally, one shot boons can be chosen multiple times over the course of a run.
   - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
     - arguments table:
       - `api` ([API](#api)) - the game API.
@@ -359,7 +360,21 @@ Coming soon :)
 
 ### `define_trigger_draft`
 
-Coming soon :)
+- `options` (`table`, required)
+  - `id` (`number`, required): a unique trigger id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. **Do not** renumber trigger drafts; the save system is based around maintaining consistent ids across versions.
+  - `accept(def, data)` (`function`, required): called by the draft system to check if the trigger should be presented in the trigger draft choices.
+    - arguments:
+      - [TriggerDef](#triggerdef) - the trigger def which is being proposed to add to the draft choices.
+      - `string` - the data, if any, passed to `push_trigger_draft`
+    - return: `bool` - `true` if the trigger should be added to the draft, `false` if not.
+  - `amount` (`number`, optional, default = `1`) - the number of triggers to offer in the draft.
+  - `skippable` (`boolean`, optional, default = `true`) - Whether the draft is skippable or not. **USE THIS EXTREMELY CAUTIOUSLY**. An unskippable draft can cause hardlocks if a player's board is full and they also have no removals.
+
+See `examples/mod.lua` for a concrete example how to send data through `push_trigger_draft` and be retrieved during the call to the `accept` function provided in `define_trigger_draft`
+
+**Returns**
+
+[TriggerDraft](#triggerdraft)
 
 # Data Types
 
@@ -537,7 +552,8 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `can_reroll` (`boolean`, required) - can the player spend a reroll to get more draft choices (using the same provided draft)
       - `draft` ([TriggerDraft](#triggerdraft), required) - the trigger draft function, which is used to determine which triggers are offered in the draft.
-      - `from` ([TriggerDef](#triggerdef), optional) - if applicable, the trigger def that offered this draft; displayed to the user so they understand where the draft is coming from.
+      - `from` ([TriggerDef](#triggerdef) or [BoonDef](#boondef), optional, default: `nil`) - if applicable, the trigger or boon def that offered this draft; displayed to the user so they understand where the draft is coming from.
+      - `data` (`string`, optional) - data that will be supplied to the `accept` function in `define_trigger_draft`. (see `examples/mod.lua` for concrete examples of how to use this functionality)
   - returns: n/a
 - `replace_trigger(args)`
   - arguments:
@@ -545,8 +561,8 @@ Much of the game logic lives in the API object, which is made available in the `
       - `trigger` ([Trigger](#trigger), required) - the trigger being replaced
       - `def` ([TriggerDef](#triggerdef), required) - the replacing trigger def
       - `ball` ([Ball](#ball), optional) - the ball if any which caused this trigger to be replace
-      - `spawn_effect` ([TriggerSpawnEffect](#triggerspawneffect) string, optional, default: "sparkle") - the spawn effect to use on the replacement trigger
-      - `destroyed_reason` ([TriggerDestroyedReason](#triggerdestroyedreason) string, optional, default: "forced") - the reason the replaced trigger was destroyed
+      - `spawn_effect` ([TriggerSpawnEffect](#triggerspawneffect) string, optional, default: `"sparkle"`) - the spawn effect to use on the replacement trigger
+      - `destroyed_reason` ([TriggerDestroyedReason](#triggerdestroyedreason), optional, default: `trigger_destroyed_effects.forced`) - the reason the replaced trigger was destroyed
   - returns: n/a
 - `set_counter(args)` - Set a visible counter's value to the given string **IMPORTANT**: will NOT make the counter appear if it's currently hidden.
   - arguments:

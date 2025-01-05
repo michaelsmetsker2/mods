@@ -49,6 +49,7 @@ define_boon {
     name = "Free Real Estate",
     desc = "Placed ➜ Gain $1,234",
     texture = "free_real_estate.png",
+    one_shot = true,
     rarity = rarities.common,
     on_place = function(e)
         -- e.continuing is true if we're loading the game. so don't repeat any behavior that's intended to be "one time"
@@ -226,6 +227,51 @@ local poor_mans_endlesss = define_boon {
             end
         end
         e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
+    end,
+}
+
+local spawner_draft = define_trigger_draft {
+    id = 1,
+    accept = function (def,data)
+        -- only accept spawners
+        return def.traits[traits.spawner] 
+    end,
+    amount = 3,
+}
+
+local bag_of_spawners = define_boon {
+    id = 10,
+    name = "Bag of Spawners",
+    desc = "Immediately draft a Spawner trigger.",
+    texture = "bag.png",
+    one_shot = true,
+    rarity = rarities.common,
+    on_place = function(e)
+        e.api.push_trigger_draft { can_reroll = false, draft = spawner_draft, from = e.self.def }
+    end,
+}
+
+local specific_id_draft = define_trigger_draft {
+    id = 2,
+    accept = function (def,data)
+        -- if the id matches the specific trigger id we pushed
+        return def.id == tonumber(data)
+    end,
+    amount = 1,
+}
+
+local bag_of_magic = define_boon {
+    id = 11,
+    name = "Bag of Eggs",
+    desc = "Immediately draft a "..triggers.chicken.name..", a "..triggers.nest.name..", and a "..triggers.spell_of_eggsplosion.name..".",
+    texture = "bag.png",
+    one_shot = true,
+    rarity = rarities.rare,
+    on_place = function(e)
+        e.api.push_trigger_draft { can_reroll = false, data = tostring(triggers.chicken.id), draft = specific_id_draft, from = e.self.def, }
+        -- (note: you'll actually draft smoke if you don't have nest unlocked...)
+        e.api.push_trigger_draft { can_reroll = false, data = tostring(triggers.nest.id), draft = specific_id_draft, from = e.self.def, }
+        e.api.push_trigger_draft { can_reroll = false, data = tostring(triggers.spell_of_eggsplosion.id), draft = specific_id_draft, from = e.self.def, }
     end,
 }
 
