@@ -450,6 +450,11 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), optional) - the ball which caused the destruction
       - `destroyed_reason` ([TriggerDestroyedReason](#triggerdestroyedreason) string, optional, default: "destroyed") - the reason the trigger was destroyed
   - returns: n/a
+- `dim(args)` - visually dim the trigger, as if it was in cooldown. This is a way to express that a trigger is not "active", without actually invoking cooldown logic.
+  - arguments:
+    - `args` (`table`, required)
+      - `trigger` ([Trigger](#trigger), required)
+  - returns: n/a
 - `earn(args)` - cause money to be earned by a trigger, possibly attributed to a ball. **NOTE**: This API is likely to change because the game, internally, has a "declarative" scoring system, not ad-hoc assignment of scoring amounts like this API. I suggest you work in multiples of $100, and try to follow the games's existing power curve. Money earned will be displayed to the user as "base X mult" when mult > 1, or "base" when mult <= 1. Base and Mult should always be integral and will ultimately be integralized inside the game anyway if you don't make them integral. This API can also take negative bases to represent a loss.
   - arguments:
     - `args` (`table`, required)
@@ -614,6 +619,10 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `trigger` ([Trigger](#trigger), required)
   - returns: Lua iterator of adjacent [Trigger](#trigger)s
+- `undim(args)` - visually undim the trigger. Note that all triggers are automatically undimmed after a drop, so you don't need to call this explicitly unless you need to undim the trigger during a drop.
+  - arguments:
+    - `args` (`table`, required)
+      - `trigger` ([Trigger](#trigger), required)
 - `vec2(x,y)` - construct a [Vector2](#vector2)
   - arguments:
     - `x` (`number`, required)
