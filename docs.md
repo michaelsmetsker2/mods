@@ -735,23 +735,24 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
 ### Ball
 
 - `Ball` (`userdata`)
-  - `class` (`string`) - `"ball"`
-  - `position` ([Vector2](#vector2)) - the global position of this Ball.
-  - `linear_velocity` ([Vector2](#vector2)) - the linear velocity of this Ball.
-  - `type` ([BallType](#balls)) - the type of the Ball.
+  - `class` (`string`, readonly) - `"ball"`
+  - `position` ([Vector2](#vector2), readonly) - the global position of this Ball.
+  - `linear_velocity` ([Vector2](#vector2), readonly) - the linear velocity of this Ball.
+  - `type` ([BallType](#balls), readonly) - the type of the Ball.
+  - `xmult` (number, readwrite) - the ball's earning multiplier (xmult). Applied to any money it causes to be earned. Starts at 1.0.
 
 ### Boon
 
 - `Boon` (`userdata`)
-  - `class` (`string`) - `"boon"`
-  - `def` ([BoonDef](#boondef)) - the BoonDef for this Boon.
+  - `class` (`string`, readonly) - `"boon"`
+  - `def` ([BoonDef](#boondef), readonly) - the BoonDef for this Boon.
 
 ### BoonDef
 
 - `BoonDef` (`userdata`)
-  - `class` (`string`) - `"boondef"`
-  - `name` (`string`)
-  - `texture` ([Texture](#texture))
+  - `class` (`string`, readonly) - `"boondef"`
+  - `name` (`string`, readonly)
+  - `texture` ([Texture](#texture), readonly)
 
 See the `exports.txt` file for a list of all built-in Boon definitions. So for example you can refer to the Correctional Fluid boon by `boons.correctional_fluid`
 
@@ -762,9 +763,9 @@ A `Concept` is an umbrella of many things; every [TriggerDef](#triggerdef) or [B
 ### Earn
 
 - `Earn` (`userdata`)
-  - `Base` (`number`, read-only) - the earning base
-  - `Mult` (`number`, read-only) - the earning overall multiplier (see below)
-  - `Scalar` (`number`, read-only) - the total value earned `Base * Mult`
+  - `Base` (`number`, readonly) - the earning base
+  - `Mult` (`number`, readonly) - the earning overall multiplier (see below)
+  - `Scalar` (`number`, readonly) - the total value earned `Base * Mult`
   - `mult` (`function`, args: `number`) - add to the mult
   - `xmult` (`function`, args: `number`) - multiply the xmult
 
@@ -787,40 +788,40 @@ The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plug
 ### Slot
 
 - `Slot` (`userdata`)
-  - `class` (`string`) - `"slot"`
-  - `position` ([Vector2](#vector2)) - the global position of this slot.
+  - `class` (`string`, readonly) - `"slot"`
+  - `position` ([Vector2](#vector2), readonly) - the global position of this slot.
 
 ### Trait
 
 - `Trait` (`userdata`)
-  - `class` (`string`) - `"trait"`
-  - `name` (`string`) - the displayable name of the trait.
+  - `class` (`string`, readonly) - `"trait"`
+  - `name` (`string`, readonly) - the displayable name of the trait.
 
 There's also a global object, named `traits`, that has all the built-in traits defined on it, e.g. `traits.spawner`. The existing built-in traits are `ager`, `animal`, `attackable`, `hat`, `holder`, `carryable`, `chain`, `cluster`, `plant`, `limited`, `food`, `meal`, `ingredient`, `shy`, `mover`, `secret`, `obstacle`, `one_shot`, `permanent`, `spawner`, `scroll`, `treasure`, `unique`, `vehicle`, and `weapon`.
 
 ### TriggerDef
 
 - `TriggerDef` (`userdata`)
-  - `class` (`string`) - `"triggerdef"`
-  - `name` (`string`)
-  - `texture` ([Texture](#texture))
-  - `traits` (`table` where keys are [Trait](#trait) objects)
+  - `class` (`string`, readonly) - `"triggerdef"`
+  - `name` (`string`, readonly)
+  - `texture` ([Texture](#texture), readonly)
+  - `traits` (`table` where keys are [Trait](#trait) objects, readonly)
 
 See the `exports.txt` file for a list of all built-in Trigger definitions. So for example you can refer to the pizza trigger by `triggers.pizza`
 
 ### TriggerDraft
 
 - `TriggerDraft` (`userdata`)
-  - `class` (`string`) - `"triggerdraft"`
+  - `class` (`string`, readonly) - `"triggerdraft"`
 
 ### Trigger
 
 - `Trigger` (`userdata`)
-  - `class` (`string`) - `"trigger"`
-  - `def` ([TriggerDef](#triggerdef)) - the TriggerDef for this Trigger.
-  - `position` ([Vector2](#vector2)) - the global position of this trigger.
-  - `slot` ([Slot](#slot)) - the slot where the Trigger has been placed.
-  - `as` (`function`) - returns the given [Mixin](#mixins), if installed in the Trigger.
+  - `class` (`string`, readonly) - `"trigger"`
+  - `def` ([TriggerDef](#triggerdef), readonly) - the TriggerDef for this Trigger.
+  - `position` ([Vector2](#vector2), readonly) - the global position of this trigger.
+  - `slot` ([Slot](#slot), readonly) - the slot where the Trigger has been placed.
+  - `as` (`function`, readonly) - returns the given [Mixin](#mixins), if installed in the Trigger.
     - arguments :
       - mixin (`string`, required) - the name of the mixin
     - returns :

@@ -1,6 +1,6 @@
 ----- trait examples
 
-local monitor_trait = define_trait { name = "Monitor" }
+local monitor_trait = define_trait { id = 1, name = "Monitor" }
 
 ------ boon examples
 
