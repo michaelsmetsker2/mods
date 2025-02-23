@@ -156,9 +156,9 @@ traits.i_wants_removal
 
 -- all trigger destroyed reasons
 
-trigger_destroyed_effects.removed
-trigger_destroyed_effects.destroyed
-trigger_destroyed_effects.forced
+trigger_destroyed_reasons.removed
+trigger_destroyed_reasons.destroyed
+trigger_destroyed_reasons.forced
 
 -- all triggers
 

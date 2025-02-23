@@ -98,6 +98,113 @@ local oops_all_cheese = define_boon {
     end
 }
 
+local cheese_eater = define_trigger {
+    id = 2,
+    name = "Cheese Eater",
+    desc = "Earn $1,000 for each carried Cheese, then consume the Cheese.",
+    texture = "cheese_eater.png",
+    rarity = rarities.undraftable,
+    synergies = { triggers.cheese },
+    traits = { },
+    on_bonk = function(e)
+        local consumed = 0
+        e.api.consume_carryables { ball = e.ball, accept = function(def)
+                consumed = consumed + (def == triggers.cheese and 1 or 0)
+                return def == triggers.cheese
+            end 
+        }
+        if consumed > 0 then
+            e.api.earn { source = e.self, base = consumed * 1000 }                
+        end
+    end
+}
+
+local screamer = define_trigger {
+    id = 3,
+    name = "Screamer",
+    desc = "Bonked ➜ Emit a Notify call",
+    texture = triggers.hungry_mouth.texture,
+    rarity = rarities.undraftable,
+    traits = { },
+    on_bonk = function(e)
+        e.api.notify { source = e.self, silent = true, text = "I've been bonked!" }
+    end
+}
+
+local better_battery = define_trigger {
+    id = 4,
+    name = "Better Battery",
+    desc = color("yellow", "Each Drop").." ➜ Transfer 1 charge to each adjacent Limited trigger.",
+    texture = triggers.battery.texture,
+    rarity = rarities.undraftable,
+    traits = { },
+    on_drop = function(e)
+        for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
+            if adj.def.traits[traits.limited] then
+                local limited = adj.as("limited")
+                limited.change_charges_by(1)
+            end
+        end
+    end
+}
+
+local simple_silo = define_trigger {
+    id = 5,
+    name = "Simple Silo",
+    desc = "When a Plant trigger is placed adjacent to Simple Silo, destroy it and earn $10,000.\n\nWhen a Plant trigger adjacent to Simple Silo is removed, earn $10,000.",
+    texture = triggers.silo.texture,
+    rarity = rarities.undraftable,
+    traits = { },
+    on_trigger_placed = function(e)
+        if e.trigger.def.traits[traits.plant] then
+            e.api.destroy_trigger { trigger = e.trigger, reason = trigger_destroyed_reasons.destroyed }
+            e.api.earn { source = e.self, base = 10000 }
+        end
+    end,
+    on_trigger_destroyed = function(e)
+        if e.trigger.def.traits[traits.plant] and e.reason == trigger_destroyed_reasons.removed then
+            e.api.earn { source = e.self, base = 10000 }
+        end
+    end,
+}
+
+local lucky_foot = define_trigger {
+    id = 6,
+    name = "Lucky Foot",
+    desc = color("yellow", "Each Drop").." ➜ Each adjacent trigger gains +0.01 mult",
+    texture = boons.rabbits_foot.texture,
+    rarity = rarities.undraftable,
+    traits = { },
+    on_drop = function(e)
+        for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
+            e.api.gain_mult { trigger = adj, mult = 0.01 }
+        end
+    end,
+}
+
+local big_xmult = define_trigger {
+    id = 7,
+    name = "Big XMult",
+    desc = "Adjacent triggers have x4.0 mult.",
+    texture = "big_xmult.png",
+    rarity = rarities.undraftable,
+    traits = { },
+    on_place = function(e)
+        -- this handles the case of placing us initially in an existing board AND loading the board when continuing a game
+        -- managed mults really have to be dealt with in BOTH on_place and on_trigger_placed. the save/load system does not record them!!!
+        for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
+            e.api.set_managed_xmult { trigger = adj, source = e.self, xmult = 4.0 }
+        end
+    end,
+    on_trigger_placed = function(e)
+        -- this handles the case of a trigger being placed in an existing board AND loading the board when continuing a game
+        -- managed mults really have to be dealt with in BOTH on_place and on_trigger_placed. the save/load system does not record them!!!
+        for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
+            e.api.set_managed_xmult { trigger = adj, source = e.self, xmult = 4.0 }
+        end
+    end,
+}
+
 local event_monitor = define_boon {
     id = 6,
     name = "Event Monitor",

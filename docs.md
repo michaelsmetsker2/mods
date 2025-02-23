@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.11`
+Up-to-date as of Ballionaire `v1.0.16`
 
 # Overview
 
@@ -281,13 +281,12 @@ Coming soon :)
       - `ball` ([Ball](#ball)) - the ball that spawned.
       - `trigger` ([Trigger](#trigger)) - the trigger that spawned the ball (may be `nil`)
       - `initial_drop` (boolean) - whether the ball spawn as part of the initial drop or not.
-  - `on_bonk` (`function`, optional): called when a ball bonks a trigger.
+  - `on_bonk` (`function`, optional): called when a ball bonks THIS trigger.
     - arguments table:
       - `api` ([API](#api)) - the game API.
       - `self` ([Trigger](#trigger)) - this trigger.
       - `data` (table) - freeform data table for this trigger.
       - `ball` ([Ball](#ball)) - the ball that did the bonking.
-      - `trigger` ([Trigger](#trigger)) - the trigger that was bonked.
   - `on_destroying` (`function`, optional): called just before this trigger is destroyed. Check the reason to determine if the destruction is due to game effects or player removal.
     - arguments table:
       - `api` ([API](#api)) - the game API.
@@ -376,6 +375,17 @@ See `examples/mod.lua` for a concrete example how to send data through `push_tri
 
 [TriggerDraft](#triggerdraft)
 
+# Helpers
+
+`color(color, str)`
+
+This function will color the given string `str` by the given color in markup text. Recommend that you only use this in boon and trigger descriptions.
+
+- `color`: one of `"yellow"`, `"orange"`, `"blue"`, `"red"`, `"green"`, `"white"`, or a value that will be treated as html rgb (e.g. `"#f020a0"`)
+- `str`: the text to color
+
+"Better Battery" trigger in `examples/mod.lua` shows an example use of this.
+
 # Data Types
 
 ## API
@@ -420,6 +430,18 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `ball` ([Ball](#ball), required)
   - returns: Lua iterator of carried [TriggerDef](#triggerdef)s
+- `clear_managed_mult(args)` - clear a source's managed mult on a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - the source originally providing the mult (a trigger or boon).
+      - `trigger` ([Trigger](#trigger), required) - the trigger on which the mult is being cleared.
+  - returns: n/a
+- `clear_managed_xmult(args)` - clear a source's managed xmult on a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - the source originally providing the xmult (a trigger or boon).
+      - `trigger` ([Trigger](#trigger), required) - the trigger on which the xmult is being cleared.
+  - returns: n/a
 - `consume_carryables(args)` - give a carryable to a ball. Carryables are defined simply by their TriggerDef.
   - arguments:
     - `args` (`table`, required)
@@ -448,7 +470,7 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `trigger` ([Trigger](#trigger), required)
       - `ball` ([Ball](#ball), optional) - the ball which caused the destruction
-      - `destroyed_reason` ([TriggerDestroyedReason](#triggerdestroyedreason) string, optional, default: "destroyed") - the reason the trigger was destroyed
+      - `reason` ([TriggerDestroyedReason](#triggerdestroyedreason) string, optional, default: `trigger_destroyed_effects.destroyed`) - the reason the trigger was destroyed
   - returns: n/a
 - `dim(args)` - visually dim the trigger, as if it was in cooldown. This is a way to express that a trigger is not "active", without actually invoking cooldown logic.
   - arguments:
@@ -470,6 +492,12 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), optional) - the ball if any which caused this
       - `amount` (`number`, required) - amount of extra drops to be given to the player.
   - returns: boolean
+- `gain_mult(args)` - permanentently give mult to a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `trigger` ([Trigger](#trigger), required) - the trigger gaining the mult.
+      - `mult` (`number`, required) - the amount of mult to gain. this is added to the trigger's existing mult.
+  - returns: n/a
 - `gain_removals(args)` - award extra removals to the player.
   - arguments:
     - `args` (`table`, required)
@@ -484,6 +512,12 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), optional) - the ball if any which caused this
       - `amount` (`number`, required) - amount of extra rerolls to be given to the player.
   - returns: boolean
+- `gain_xmult(args)` - permanentently give xmult to a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `trigger` ([Trigger](#trigger), required) - the trigger gaining the xmult.
+      - `xmult` (`number`, required) - the amount of xmult to gain. this is multiplied to the trigger's existing xmult.
+  - returns: n/a
 - `hide_counter(args)` - hide the trigger or boon's counter, if one is visible.
   - arguments:
     - `args` (`table`, required)
@@ -541,6 +575,7 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `source` ([Trigger](#trigger) or [Boon](#boon), options) - trigger or boon providing the notification. Its texture will appear, if provided.
       - `text` (`string`, required) - the text to display in the notification
+      - `silent` (`bool`, optional, default: `false`) - control whether the notification bell rings or not. (Recommendation: notifications for the player should never be silent. But if you use `notify` to debug, recommending silencing them to not drive yourself crazy 😵‍)
   - returns: n/a
 - `place_trigger(args)`
   - arguments:
@@ -567,13 +602,27 @@ Much of the game logic lives in the API object, which is made available in the `
       - `def` ([TriggerDef](#triggerdef), required) - the replacing trigger def
       - `ball` ([Ball](#ball), optional) - the ball if any which caused this trigger to be replace
       - `spawn_effect` ([TriggerSpawnEffect](#triggerspawneffect) string, optional, default: `"sparkle"`) - the spawn effect to use on the replacement trigger
-      - `destroyed_reason` ([TriggerDestroyedReason](#triggerdestroyedreason), optional, default: `trigger_destroyed_effects.forced`) - the reason the replaced trigger was destroyed
+      - `reason` ([TriggerDestroyedReason](#triggerdestroyedreason), optional, default: `trigger_destroyed_effects.forced`) - the reason the replaced trigger was destroyed
   - returns: n/a
 - `set_counter(args)` - Set a visible counter's value to the given string **IMPORTANT**: will NOT make the counter appear if it's currently hidden.
   - arguments:
     - `args` (`table`, required)
       - `source` ([Trigger](#trigger) or [Boon](#boon), required) - trigger or boon whose counter should be set.
       - `value` (`string`, required) - initial value to display in the counter
+  - returns: n/a
+- `set_managed_mult(args)` - apply a managed mult to a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - the source setting the mult (a trigger or boon).
+      - `trigger` ([Trigger](#trigger), required) - the trigger on which the managed mult is being set.
+      - `mult` (`number`, required) - the value of mult to set.
+  - returns: n/a
+- `set_managed_xmult(args)` - apply a managed xmult to a trigger. See [Mult](#mult) for an explainer on how mults work.
+  - arguments:
+    - `args` (`table`, required)
+      - `source` ([Trigger](#trigger) or [Boon](#boon), required) - the source setting the xmult (a trigger or boon).
+      - `trigger` ([Trigger](#trigger), required) - the trigger on which the managed xmult is being set.
+      - `xmult` (`number`, required) - the value of xmult to set.
   - returns: n/a
 - `set_money_goal(args)` - Change the current money goal (tribute). Changing this value will _not_ immediately trigger any logic that cares about the tribute, e.g. Winner's Cup. They won't see the new money goal until the next time they would normally look at it.
   - arguments:
@@ -628,6 +677,26 @@ Much of the game logic lives in the API object, which is made available in the `
     - `x` (`number`, required)
     - `y` (`number`, required)
   - returns: [Vector2](#vector2)
+
+## Mult
+
+Mult is a bit complicated in Ballionaire. Let's start backwards, with how money is earned:
+
+`Earnings = Base x Mult x XMult`
+
+Every trigger starts with some Base earning, a Mult of 1.0, and an XMult of 1.0. When a trigger gains Mult, it adds to the existing Mult, and when it gains XMult, it multiplies into the existing XMult.
+
+This isn't too dissimilar from what you might be used to in other games. However, mult has two more concepts in Ballionaire that you must understand: managed mult/xmult and unmanaged mult/xmult.
+
+Unmanaged mult/xmult is managed via the `gain_mult` and `gain_xmult` APIs. This permanently changes a trigger's Mult and XMult (by adding more Mult or multiplying more XMult). A trigger's internal Mult and XMult are saved when continuing the game. The gain of mult is not attributed to any source, and it will never be lost by that trigger. Use for this mult effects that are permanent in nature, e.g. the way that Vacancy Sign works, for example.
+
+Managed mult/xmult controlled via the `set_managed_mult`, `clear_managed_mult`, `set_managed_xmult`, and `clear_managed_xmult` APIs. These mults are only temporarily provided by another source (trigger or boon). The provider is responsible for keeping track of the mults, and applying them, even on continuing a saved game. If the provider is destroyed/removed, the mult is automatically cleared. These APIs are _NOT_ cumulative, you can simply set, or clear, a value. Each trigger can track exaclty. one mult and xmult value from each source. An example of this kind of managed mult is Greenhouse, or Amethyst.
+
+In summary, mult actually works as:
+
+`Earnings = Base x (Unmanaged Mult + Sum of All Managed Mults) x (Unamanged XMult X Product Of All Managed XMults)`
+
+See `examples/mod.lua` "Lucky Foot" and "Louder Whistle" for examples of unmanaged mults and managed mults (respectively).
 
 ## Enumerations
 
