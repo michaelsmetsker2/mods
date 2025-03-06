@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.16`
+Up-to-date as of Ballionaire `v1.0.19`
 
 # Overview
 
@@ -76,6 +76,25 @@ The exports can and will change as the game receives updates. We'll try to make 
 
 The Ballionaire mod API is broken down into two sections: definition functions that run at game load time for defining your mod and content such as triggers, and game functions that run at game play time, for interacting with the gameplay and making things happen!
 top level of `mod.lua`
+
+### `define_ball_type`
+
+Call this function at the top level of `mod.lua` to define a new ball type
+
+`define_ball_type(options)`
+
+**Arguments**
+
+- `options` (`table`, required)
+  - `id` (`number`, required): a unique ball type id in _this_ `mod.lua` file. Recommended to start at 1 and simply count up. `Do not` renumber ball types; the save system is based around maintaining consistent ids across versions.
+  - `name` (`string`, required) The visible name of the ball. Should be globally unique, to prevent confusion
+  - `texture` ([Texture](#texture), required): a texture for this ball.
+  - `texture_left` ([Texture](#texture), required): a texture for this ball (left half). Should be 360x360 and centered.
+  - `texture_right` ([Texture](#texture), required): a texture for this ball (right half). Should be 360x360 and centered.
+
+**Returns**
+
+[BallType](#balltype)
 
 ### `define_board`
 
@@ -263,6 +282,7 @@ Coming soon :)
   - `cooldown` (number, optional): the bonk cooldown of this trigger - defaults to 0 (no cooldown)
   - `synergies` (array of [Concept](#concept)s): all synergies for this trigger.
   - `traits` (array of [Trait](#trait)s): all traits for this trigger.
+  - `can_earn` (`boolean`, optional, default: `false`): this MUST be set to `true` if your trigger can ever earn money. (If you fail to do so, mults will not work for this trigger.)
   - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
     - arguments table:
       - `api` ([API](#api)) - the game API.
@@ -477,13 +497,14 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `trigger` ([Trigger](#trigger), required)
   - returns: n/a
-- `earn(args)` - cause money to be earned by a trigger, possibly attributed to a ball. **NOTE**: This API is likely to change because the game, internally, has a "declarative" scoring system, not ad-hoc assignment of scoring amounts like this API. I suggest you work in multiples of $100, and try to follow the games's existing power curve. Money earned will be displayed to the user as "base X mult" when mult > 1, or "base" when mult <= 1. Base and Mult should always be integral and will ultimately be integralized inside the game anyway if you don't make them integral. This API can also take negative bases to represent a loss.
+- `earn(args)` - cause money to be earned by a trigger or boon, possibly attributed to a ball. If a trigger isearning, any gained or managed mults on that trigger will be applied inside this API.
   - arguments:
     - `args` (`table`, required)
       - `source` ([Trigger](#trigger) or [Boon](#boon), required)
       - `ball` ([Ball](#ball), optional) - the ball if any which is causing the earning
       - `base` (`number`, required)
       - `mult` (`number`, option, default = `1`)
+      - `xmult` (`number`, option, default = `1`)
   - returns: n/a
 - `gain_drops(args)` - award extra drops to the player. **IMPORTANT**: this is obviously insanely powerful from a balance perspective. Use it wisely :)
   - arguments:
@@ -832,11 +853,11 @@ A `Concept` is an umbrella of many things; every [TriggerDef](#triggerdef) or [B
 ### Earn
 
 - `Earn` (`userdata`)
-  - `Base` (`number`, readonly) - the earning base
-  - `Mult` (`number`, readonly) - the earning overall multiplier (see below)
-  - `Scalar` (`number`, readonly) - the total value earned `Base * Mult`
-  - `mult` (`function`, args: `number`) - add to the mult
-  - `xmult` (`function`, args: `number`) - multiply the xmult
+  - `base` (`number`, readonly) - the earning base
+  - `mult` (`number`, readonly) - the earning overall multiplier (mult times xmult; see below)
+  - `scalar` (`number`, readonly) - the total value earned `base * mult` (mult times xmult)
+  - `gain_mult` (`function`, args: `number`) - increase mult (additive)
+  - `gain_xmult` (`function`, args: `number`) - increase the xmult (multiplicative)
 
 Earning is based on a mult/xmult model:
 
@@ -846,11 +867,11 @@ For example, given an Earn object `earn`, with Base: 800, Mult: 1.0
 
 If you then call
 
-`earn.mult(0.25)`
+`earn.gain_mult(0.25)`
 
-`earn.xmult(2)`
+`earn.gain_xmult(2)`
 
-`earn.mult(0.25)`
+`earn.gain_mult(0.25)`
 
 The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plugging into the overall Mult formula: `(1.0 + 0.5) * 2.0` - the total Mult is `3.0`.
 
@@ -882,6 +903,7 @@ See the `exports.txt` file for a list of all built-in Trigger definitions. So fo
 
 - `TriggerDraft` (`userdata`)
   - `class` (`string`, readonly) - `"triggerdraft"`
+  - `is_standard` (`boolean`, readonly) - true if this draft is the "standard trigger draft" that occurs after each drop.
 
 ### Trigger
 

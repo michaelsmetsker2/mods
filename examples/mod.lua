@@ -22,7 +22,7 @@ define_boon {
             xmult = 0.0
         end
         -- apply as xmult
-        e.earn.xmult(xmult)
+        e.earn.gain_xmult(xmult)
         -- let's alert the player that this happened w/ a floatie if it's a trigger
         if e.trigger then
             e.api.spawn_floatie { source = e.trigger, texture = e.self.def.texture }
@@ -30,16 +30,24 @@ define_boon {
     end,
 }
 
+local red_chip_ball_type = define_ball_type {
+    id = 1,
+    name = "Red Chip",
+    texture = "red_chip.png",
+    texture_left = "red_chip_left.png",
+    texture_right = "red_chip_right.png",
+}
+
 define_boon {
     id = 2,
-    name = "Friend Gregplant",
-    desc = "Whenever a ball drops, spawn an Eggplant near it.",
-    texture = "gregplant.png",
+    name = "Chippy",
+    desc = "Whenever a ball drops, spawn a Red Chip near it.",
+    texture = "red_chip.png",
     rarity = rarities.common,
     on_drop = function(e)
         -- e.balls - an array of all balls dropping. slot machine can spawn more than one ball.
         for _,ball in pairs(e.balls) do
-            e.api.spawn_ball { type = balls.eggplant, from = ball.position }
+            e.api.spawn_ball { type = red_chip_ball_type, from = ball.position }
         end
     end,
 }
@@ -103,7 +111,7 @@ local cheese_eater = define_trigger {
     name = "Cheese Eater",
     desc = "Earn $1,000 for each carried Cheese, then consume the Cheese.",
     texture = "cheese_eater.png",
-    rarity = rarities.undraftable,
+    rarity = rarities.common,
     synergies = { triggers.cheese },
     traits = { },
     on_bonk = function(e)
@@ -136,7 +144,7 @@ local better_battery = define_trigger {
     name = "Better Battery",
     desc = color("yellow", "Each Drop").." ➜ Transfer 1 charge to each adjacent Limited trigger.",
     texture = triggers.battery.texture,
-    rarity = rarities.undraftable,
+    rarity = rarities.uncommon,
     traits = { },
     on_drop = function(e)
         for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
@@ -153,16 +161,17 @@ local simple_silo = define_trigger {
     name = "Simple Silo",
     desc = "When a Plant trigger is placed adjacent to Simple Silo, destroy it and earn $10,000.\n\nWhen a Plant trigger adjacent to Simple Silo is removed, earn $10,000.",
     texture = triggers.silo.texture,
-    rarity = rarities.undraftable,
+    rarity = rarities.rare,
     traits = { },
+    can_earn = true,
     on_trigger_placed = function(e)
-        if e.trigger.def.traits[traits.plant] then
+        if e.api.are_triggers_adjacent { trigger = e.self, other = e.trigger} and e.trigger.def.traits[traits.plant] then
             e.api.destroy_trigger { trigger = e.trigger, reason = trigger_destroyed_reasons.destroyed }
             e.api.earn { source = e.self, base = 10000 }
         end
     end,
     on_trigger_destroyed = function(e)
-        if e.trigger.def.traits[traits.plant] and e.reason == trigger_destroyed_reasons.removed then
+        if e.api.are_triggers_adjacent { trigger = e.self, other = e.trigger} and e.trigger.def.traits[traits.plant] and e.reason == trigger_destroyed_reasons.removed then
             e.api.earn { source = e.self, base = 10000 }
         end
     end,
@@ -173,7 +182,7 @@ local lucky_foot = define_trigger {
     name = "Lucky Foot",
     desc = color("yellow", "Each Drop").." ➜ Each adjacent trigger gains +0.01 mult",
     texture = boons.rabbits_foot.texture,
-    rarity = rarities.undraftable,
+    rarity = rarities.uncommon,
     traits = { },
     on_drop = function(e)
         for adj in e.api.triggers_adjacent_to_trigger({ trigger = e.self }) do
@@ -294,11 +303,15 @@ local spawn_counter = define_boon {
 local random_draft_size = define_boon {
     id = 8,
     name = "Random Draft Size",
-    desc = "The draft will randomly have between 1-5 choices.",
+    desc = "The standard trigger draft will randomly have between 1-5 choices.",
     texture = triggers.computer.texture,
     rarity = rarities.undraftable,
     would_offer_trigger_draft_size = function(e)
-        return math.random(1,5)
+        if e.draft.is_standard then 
+            return math.random(1,5)
+        else
+            return e.amount
+        end
     end,
 }
 
