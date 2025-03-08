@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.19`
+Up-to-date as of Ballionaire `v1.0.21`
 
 # Overview
 
@@ -584,8 +584,23 @@ Much of the game logic lives in the API object, which is made available in the `
           - `mixin` ([Holder](#holder)) - the limited mixin itself
           - `data` (`table`) - freeform data table for this trigger
           - `change` (`number`) - amount of the change (can be positive or negative!)
-    - attackable
-      - WIP
+    - attackable (See `examples/mod.lua` `derpy_dragon` definition for examples)
+      - `initial_health` (`number`, required) - the initial, and maximum, health for this attackable
+      - `on_damaged` (`function`, optional) - callback invoked when the attackable is damaged
+        - `on_damaged` arguments:
+          - `api` ([API](#api))
+          - `self` ([Trigger](#trigger))
+          - `mixin` ([Holder](#holder)) - the limited mixin itself
+          - `data` (`table`) - freeform data table for this trigger
+          - `causer` ([Ball](#ball) or nil) - the damaging ball, possibly nil
+          - `amount` (`number`) - amount of damage received
+      - `on_defeated` (`function`, optional) - callback invoked when the attackable is defeated (brought to <= 0 health)
+        - `on_defeated` arguments:
+          - `api` ([API](#api))
+          - `self` ([Trigger](#trigger))
+          - `mixin` ([Holder](#holder)) - the limited mixin itself
+          - `data` (`table`) - freeform data table for this trigger
+          - `causer` ([Ball](#ball) or nil) - the ball that caused the defeat
     - shy
       - WIP
     - value
@@ -784,15 +799,14 @@ Represents a Trigger that ages over time. This Mixin will give the Trigger a cou
 
 ### Attackable
 
-Represents a Trigger that can be damaged by balls. The Trigger is responsible for implementing whatever it means to be "exhausted" (run out of health).
+Represents a Trigger that can be damaged by balls. The Trigger is responsible for implementing whatever it means to be "exhausted" (run out of health). See `examples/mod.lua` `derpy_dragon` definition for examples.
 
-- `health` (`number`) - amount of remaining health
+- `health` (`number`, readonly) - amount of remaining health
+- `max_health` (`number`, readwrite) - the attackable's max health
 - `damage` (`function`) - cause damage to the trigger
   - arguments :
-    - `ball` ([Ball](#ball)) - the ball if any which caused the damage
-- `set_health` (`function`) - set the health to a specific value without triggering damage
-  - arguments :
-    - `amount` (`number`) - amount to set health to
+    - ([Ball](#ball)) - the ball if any which caused the damage
+    - (number) - the amount of damage to do. typically want to consult the ball for this, e.g. `e.ball.damage_for(e.self)`
 
 ### Holder
 

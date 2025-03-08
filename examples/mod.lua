@@ -214,6 +214,40 @@ local big_xmult = define_trigger {
     end,
 }
 
+local br = "\n[img=bottom,1x12]res://images/empty.png[/img]"
+
+local derpy_dragon = define_trigger {
+    id = 8,
+    name = "Derpy Dragon", 
+    desc = "Bonked ➜ Damage the Derpy Dragon. Gain $100 per point of damage."..br.."Defeated ➜ Gain $1,000 and respawn with 1 more health",
+    texture = "derpy_dragon.png",
+    rarity = rarities.common,
+    cooldown = 10,
+    can_earn = true,
+    traits = { },
+    on_place = function(e)
+        e.api.mixin(e.self, "attackable", {
+            initial_health = 10,
+            on_damaged = function(e)
+                e.api.earn { source = e.self, base = 100, mult = e.amount }
+            end,
+            on_defeated = function(e)
+                -- respawn is automatic, and occurs after the on_defeated call, so if we 
+                -- bump our max_health now, the respawned Derpy Dragon will reflect it
+                local attackable = e.self.as("attackable")
+                attackable.max_health = attackable.max_health + 1
+                e.api.cooldown { trigger = e.self, ball = e.causer }
+                e.api.earn { source = e.self, base = 10000 }
+            end,
+        })
+    end,
+    on_bonk = function(e)
+        local attackable = e.self.as("attackable")
+        -- you have to consult the ball for how much damage should be dealt
+        attackable.damage(e.ball, e.ball.damage_for(e.self))
+    end,
+}
+
 local event_monitor = define_boon {
     id = 6,
     name = "Event Monitor",
@@ -265,7 +299,7 @@ local event_monitor = define_boon {
         e.api.set_counter { source = e.self, value = "on_trigger_placed ("..e.trigger.def.name..")" }
     end,
     on_trigger_destroyed = function(e)
-        local removed = e.reason == trigger_destroyed_effects.removed and "(removed)" or ""
+        local removed = e.reason == trigger_destroyed_reasons.removed and "(removed)" or ""
         e.api.set_counter { source = e.self, value = "on_trigger_destroyed "..removed.."("..e.trigger.def.name..")" }
     end,
     on_trigger_draft_skipped = function(e)
