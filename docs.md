@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.21`
+Up-to-date as of Ballionaire `v1.0.22`
 
 # Overview
 
@@ -414,10 +414,11 @@ Much of the game logic lives in the API object, which is made available in the `
 
 ### Read-Only Properties
 
-- `current_tribute` - (number) the current tribute number, 1-based
+- `current_tribute` - (number) the current tribute number, 1-based.
 - `money` - (number) current amount of money earned this tribute.
 - `money_goal` - (number) current money goal (tribute amount).
-- `remaining_drops` - (number) how many drops are left before the tribute must be satisfied
+- `remaining_drops` - (number) how many drops are left before the tribute must be satisfied.
+- `drops_per_tribute` - (number) the starting number of drops for each tribute.
 
 ### Functions
 
@@ -623,6 +624,12 @@ Much of the game logic lives in the API object, which is made available in the `
   - arguments:
     - `args` (`table`, required)
       - `sound` ([Sound](#sound), required) valid sound name to play, see [Sounds](#sound)
+- `push_boon_draft(args)` - Cause a boon draft to be offered during the next drafting phase. Drafts are placed into a stack and processed in last-in/first-out order.
+  - arguments:
+    - `args` (`table`, required)
+      - `can_reroll` (`boolean`, optional, default: `false`) - can the player reroll the draft choices
+      - `from` ([TriggerDef](#triggerdef) or [BoonDef](#boondef), optional, default: `nil`) - if applicable, the trigger or boon def that offered this draft; displayed to the user so they understand where the draft is coming from.
+  - returns: n/a
 - `push_trigger_draft(args)` - Cause an extra draft to be offered during the next trigger drafting phase. Drafts are placed into a stack and processed in last-in/first-out order.
   - arguments:
     - `args` (`table`, required)

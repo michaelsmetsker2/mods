@@ -349,41 +349,6 @@ local random_draft_size = define_boon {
     end,
 }
 
-local poor_mans_endlesss = define_boon {
-    id = 9,
-    name = "Poor Man's Endless Mode",
-    desc = "If you survive Tribute 9, keep playing until you lose. Tribute 9 never really ends, so you won't get a boon draft or trigger \"After Tribute\" effects.",
-    texture = "endless.png",
-    rarity = rarities.undraftable,
-    on_place = function(e)
-        e.data.extra_tributes = 0
-        e.api.show_counter { source = e.self, value = "Tribute "..e.api.current_tribute }
-    end,
-    on_save = function(e)
-        return tostring(e.data.extra_tributes)
-    end,
-    on_load = function(e)
-        e.data.extra_tributes = tonumber(e.load)
-        e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
-    end,
-    on_after_drop = function(e)
-        if e.api.current_tribute == 9 and e.api.remaining_drops == 0 then
-            if e.api.money > e.api.money_goal then
-                if e.data.extra_tributes == 0 then
-                    e.api.notify { source = e.self, text = "You survived the last tribute, welcome to Poor Man's Endless Mode!" }
-                else
-                    e.api.notify { source = e.self, text = "You survived Tribute "..(e.api.current_tribute + e.data.extra_tributes).."!" }
-                end
-                e.api.earn { source = e.self, base = -e.api.money, mult }
-                e.api.gain_drops { source = e.self, amount = 7 }
-                e.api.set_money_goal { amount = e.api.money_goal * 2 }
-                e.data.extra_tributes = e.data.extra_tributes + 1
-            end
-        end
-        e.api.set_counter { source = e.self, value = "Tribute "..(e.api.current_tribute + e.data.extra_tributes) }
-    end,
-}
-
 local spawner_draft = define_trigger_draft {
     id = 1,
     accept = function (def,data)
