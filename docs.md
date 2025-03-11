@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.22`
+Up-to-date as of Ballionaire `v1.0.23`
 
 # Overview
 
@@ -108,7 +108,7 @@ Coming soon :)
   - `desc` (`string`, required): the description of the boon.
   - `texture` ([Texture](#texture), required): a texture for this boon's icons.
   - `rarity` ([Rarity](#rarity), required): the rarity of this boon.
-  - `synergies` (array of [Concept](#concept)s): all synergies for this trigger.
+  - `synergies` (array of [Concept](#concept)s): all synergies for this boon.
   - `one_shot` (`boolean`, optional, default: `false`): if the boon has a one time effect and should not persist in the list of take boons. Additionally, one shot boons can be chosen multiple times over the course of a run.
   - `on_after_drop` (`function`, optional): called after the drop has occurred and been scored, but before payment (and possible win/loss) occurs.
     - arguments table:
@@ -422,6 +422,17 @@ Much of the game logic lives in the API object, which is made available in the `
 
 ### Functions
 
+- `all_slots()` - enumerate all [Slot](#slot)s on the current game board
+  - arguments: n/a
+  - returns: Lua iterator of all [Slot](#slot)s (no reliable order)
+- `all_triggers()` - enumerate all [Trigger](#trigger)s on the current game board
+  - arguments: n/a
+  - returns: Lua iterator of all [Trigger](#trigger)s (no reliable order)
+- `apply_screen_shake()` - apply a screen shake. be very careful with this; a little goes a long way.
+  - arguments:
+    - `args` (`table`, required)
+      - `strength` (`number`, required). A number between 5 and 60. In the core game, a small screenshake is 5, a medium screenshake is 30, and a large screenshake is 60.
+  - returns: n/a
 - `are_slots_adjacent(args)` - determine if two board slots are adjacent
   - arguments:
     - `args` (`table`, required)
@@ -540,6 +551,11 @@ Much of the game logic lives in the API object, which is made available in the `
       - `trigger` ([Trigger](#trigger), required) - the trigger gaining the xmult.
       - `xmult` (`number`, required) - the amount of xmult to gain. this is multiplied to the trigger's existing xmult.
   - returns: n/a
+- `get_slot_trigger(args)` - return the trigger, if any, that is in this slot
+  - arguments:
+    - `args` (`table`, required)
+      - `slot` ([Slot](#slot), required)
+  - returns: [Trigger](#trigger) if the [Slot](#slot) has one, otherwise `nil`
 - `hide_counter(args)` - hide the trigger or boon's counter, if one is visible.
   - arguments:
     - `args` (`table`, required)
@@ -551,6 +567,11 @@ Much of the game logic lives in the API object, which is made available in the `
       - `ball` ([Ball](#ball), required)
       - `def` ([TriggerDef](#triggerdef), required)
   - returns: `true` if `ball` is carrying at least one carryable of the given `def` [TriggerDef](#triggerdef)
+- `is_slot_empty(args)` - determine if the given slot has a trigger in it, or is empty
+  - arguments:
+    - `args` (`table`, required)
+      - `slot` ([Slot](#slot), required)
+  - returns: `true` if there is not [Trigger](#trigger) in this [Slot](#slot), otherwise false
 - `mixin(trigger, type, args)` - install the given [Mixin](#mixins) in this Trigger. **WARNING**: this is very advanced and very under construction.
   - `trigger` ([Trigger](#trigger), required) - the trigger into which to install this mixin
   - `type` (`string`, required, [Mixin](#mixins) type string) - the type of mixin to install
@@ -684,7 +705,9 @@ Much of the game logic lives in the API object, which is made available in the `
     - `args` (`table`, required)
       - `from` ([Trigger](#trigger), required)
       - `type` ([BallType](#balltype), required)
+      - `causer` ([Ball](#ball), optional, default = `nil`) the ball that caused the spawn
       - `linear_velocity` ([Vector2](#vector2), optional, default = `(0,0)`)
+      - `gravity_scale` ([number], optional, default = `1.0`) a multiplicative factor for this ball's gravity (can increase, decrease, or negative gravity)
       - `on_spawn` (`function`, optional)
         - on_spawn arguments:
           - `ball` ([Ball](#ball)) - the spawned ball
@@ -900,6 +923,7 @@ The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plug
 
 - `Slot` (`userdata`)
   - `class` (`string`, readonly) - `"slot"`
+  - `id` (`number`, readonly) - just a numeric identifier for the slot. Has no inherent meaning, just to help debugging.
   - `position` ([Vector2](#vector2), readonly) - the global position of this slot.
 
 ### Trait

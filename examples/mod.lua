@@ -248,6 +248,35 @@ local derpy_dragon = define_trigger {
     end,
 }
 
+-- n.b. this will CONSUME the iterator!
+local count = function(iter)
+    local count = 0
+    for _ in iter do
+      count = count + 1
+    end
+    return count
+end
+
+local board_report = define_trigger {
+    id = 9,
+    name = "Board Report", 
+    desc = "Placed ➜ Perform a report on the board. Demonstrates the use of all_slots, all_triggers, is_slot_empty, and get_slot_trigger APIs.",
+    texture = "board_report.png",
+    rarity = rarities.undraftable,
+    on_place = function(e)
+        e.api.notify { source=e.self, silent=true, text="There are "..count(e.api.all_slots()).." slots"}
+        e.api.notify { source=e.self, silent=true, text="There are "..count(e.api.all_triggers()).." triggers"}
+        for slot in e.api.all_slots() do
+            if not e.api.is_slot_empty { slot = slot } then
+                local trigger = e.api.get_slot_trigger { slot = slot }
+                e.api.notify { source=e.self, silent=true, text="Slot #"..tostring(slot.id).." has a "..trigger.def.name.." trigger"}
+            end
+        end
+    end
+}
+
+
+
 local event_monitor = define_boon {
     id = 6,
     name = "Event Monitor",
