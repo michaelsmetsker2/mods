@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.23`
+Up-to-date as of Ballionaire `v1.0.24`
 
 # Overview
 
@@ -766,10 +766,6 @@ See `examples/mod.lua` "Lucky Foot" and "Louder Whistle" for examples of unmanag
 
 ## Enumerations
 
-### BallType
-
-See the `exports.txt` file for a list of all Ball types.
-
 ### BallDestroyedEffect
 
 See the `exports.txt` file for a list of all BallDestroyedEffects.
@@ -781,6 +777,11 @@ See the `exports.txt` file for a list of all BallDestroyedReasons.
 ### Rarity
 
 See the `exports.txt` file for a list of all Rarities.
+
+- `Rarity` (`userdata`)
+  - `class` (`string`, readonly) - `"rarity"`
+  - `name` (`string`, readonly)
+  - `rich_name` (`string`, required) the name as above, with markup for colored text.
 
 ### TriggerDestroyedReason
 
@@ -875,6 +876,17 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
   - `type` ([BallType](#balls), readonly) - the type of the Ball.
   - `xmult` (number, readwrite) - the ball's earning multiplier (xmult). Applied to any money it causes to be earned. Starts at 1.0.
 
+### BallType
+
+- `BallType` (`userdata`)
+  - `class` (`string`, readonly) - `"balltype"`
+  - `name` (`string`, readonly)
+  - `plural_name` (`string`, readonly)
+  - `rich_name` (`string`, required) the name as above, with markup for colored text.
+  - `rich_plural_name` (`string`, required) the name as above, with markup for colored text.
+
+See the `exports.txt` file for a list of all built-in BallTypes.
+
 ### Boon
 
 - `Boon` (`userdata`)
@@ -886,6 +898,7 @@ Represents a Trigger that has a limited amount of uses. Triggers are responsible
 - `BoonDef` (`userdata`)
   - `class` (`string`, readonly) - `"boondef"`
   - `name` (`string`, readonly)
+  - `rich_name` (`string`, required) the name as above, with markup for colored text.
   - `texture` ([Texture](#texture), readonly)
 
 See the `exports.txt` file for a list of all built-in Boon definitions. So for example you can refer to the Correctional Fluid boon by `boons.correctional_fluid`
@@ -931,6 +944,7 @@ The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plug
 - `Trait` (`userdata`)
   - `class` (`string`, readonly) - `"trait"`
   - `name` (`string`, readonly) - the displayable name of the trait.
+  - `rich_name` (`string`, required) the name as above, with markup for colored text.
 
 There's also a global object, named `traits`, that has all the built-in traits defined on it, e.g. `traits.spawner`. The existing built-in traits are `ager`, `animal`, `attackable`, `hat`, `holder`, `carryable`, `chain`, `cluster`, `plant`, `limited`, `food`, `meal`, `ingredient`, `shy`, `mover`, `secret`, `obstacle`, `one_shot`, `permanent`, `spawner`, `scroll`, `treasure`, `unique`, `vehicle`, and `weapon`.
 
@@ -939,6 +953,7 @@ There's also a global object, named `traits`, that has all the built-in traits d
 - `TriggerDef` (`userdata`)
   - `class` (`string`, readonly) - `"triggerdef"`
   - `name` (`string`, readonly)
+  - `rich_name` (`string`, required) the name as above, with markup for colored text.
   - `texture` ([Texture](#texture), readonly)
   - `traits` (`table` where keys are [Trait](#trait) objects, readonly)
 
