@@ -1,6 +1,6 @@
 # Ballionaire API Mod Docs
 
-Up-to-date as of Ballionaire `v1.0.24`
+Up-to-date as of Ballionaire `v1.0.25`
 
 # Overview
 
@@ -17,6 +17,10 @@ Ballionaire's mods use Lua, powered by the [MoonSharp interpreter](https://www.m
 The Lua environment is heavily sandboxed. You'll have access to `print`, `string`, `math`, and `table` APIs, but not much else. Importantly, `require` and variations of `load` are not supported; your mod must reside entirely in a single `mod.lua` file.
 
 I'll be working to support interactions betwene mods and mult-file mods in the future, but want to keep things simple for v1.0.
+
+## Debugging
+
+Any `print` calls you make will end up in the file `%APPDATA%\Godot\app_userdata\ballionaire\logs\godot.log`. You can tail that file, open it in VS code, whatever, and use that to print-debug. Note: I don't think Godot flushes the log file aggressively, so there might be tiny bits of lag in print statements showing up in the log.
 
 ## How to Structure Your Mod
 
@@ -938,6 +942,8 @@ The Earn object will now have an internal mult of `0.5`, an xmult of `2.0`. Plug
   - `class` (`string`, readonly) - `"slot"`
   - `id` (`number`, readonly) - just a numeric identifier for the slot. Has no inherent meaning, just to help debugging.
   - `position` ([Vector2](#vector2), readonly) - the global position of this slot.
+  - `is_bottom_row` (`boolean`, readonly) - is the slot part of the bottom row
+  - `is_top_row` (`boolean`, readonly) - is the slot part of the top row
 
 ### Trait
 
@@ -972,6 +978,7 @@ See the `exports.txt` file for a list of all built-in Trigger definitions. So fo
   - `def` ([TriggerDef](#triggerdef), readonly) - the TriggerDef for this Trigger.
   - `position` ([Vector2](#vector2), readonly) - the global position of this trigger.
   - `slot` ([Slot](#slot), readonly) - the slot where the Trigger has been placed.
+  - `total_mult` (`number`, readonly) - the total mult (mult\*xmult) currently on this trigger, including both gained and managed mults/xmults.
   - `as` (`function`, readonly) - returns the given [Mixin](#mixins), if installed in the Trigger.
     - arguments :
       - mixin (`string`, required) - the name of the mixin
