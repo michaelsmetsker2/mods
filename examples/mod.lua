@@ -538,7 +538,7 @@ define_starter_pack {
 define_starter_pack {
     id = 3,
     name = "Oops!!! All Cheese!!!",
-    desc = "THE JUGGLERNAUT",
+    desc = "The Dairy Dimension",
     texture = triggers.cheese.texture,
     drafts = {
         oops_all_cheese,
