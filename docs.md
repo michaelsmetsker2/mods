@@ -72,7 +72,7 @@ See `examples/mod.lua` for an example of how to define the content of your mod. 
 
 ## exports.txt
 
-Several global values are made available to your mod, to allow you to refer to built-in content from the core gaem. These are all listed in `exports.txt` - the symbols there are verbatim how to refer to things, e.g. to refer to a Butterfly you would use `triggers.butterfly`.
+Several global values are made available to your mod, to allow you to refer to built-in content from the core game. These are all listed in `exports.txt` - the symbols there are verbatim how to refer to things, e.g. to refer to a Butterfly you would use `triggers.butterfly`.
 
 The exports can and will change as the game receives updates. We'll try to make sure these changes are always backwards compatible, but we can't make any guarantees that such changes **won't** occur.
 
